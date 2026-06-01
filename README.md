@@ -20,6 +20,10 @@ See [docs/architecture.md](docs/architecture.md).
 
 See [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md). **Run `terraform destroy` when finished.**
 
+## CI/CD (Phase 2)
+
+GitHub Actions build happy-path images, scan with Trivy, and push to ECR via OIDC. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
+
 ## Platform database disclosure
 
 RDS/Compose PostgreSQL is provisioned as a **platform database**. Happy-path services use upstream storage (Redis, in-memory catalog) in Phase 1.
