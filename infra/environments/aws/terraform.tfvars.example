@@ -1,5 +1,6 @@
 aws_region              = "ap-southeast-1"
 project_name            = "mini-ecommerce-devops"
-github_org              = "YOUR_ORG"
+github_org              = "VoAnhKiet1410"
 github_repo             = "mini-ecommerce-devops"
-rds_skip_final_snapshot = true
+rds_skip_final_snapshot   = true
+create_github_oidc_provider = true

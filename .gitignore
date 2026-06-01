@@ -4,8 +4,9 @@
 .terraform/
 *.tfstate
 *.tfstate.*
-.terraform.lock.hcl
 *.tfvars
+!backend.hcl.example
+backend.hcl
 !*.tfvars.example
 .idea/
 .vscode/

@@ -11,10 +11,21 @@ terraform {
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github" {
+  count = var.create_github_oidc_provider ? 1 : 0
+
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
   tags            = var.tags
+}
+
+data "aws_iam_openid_connect_provider" "github" {
+  count = var.create_github_oidc_provider ? 0 : 1
+  url   = "https://token.actions.githubusercontent.com"
+}
+
+locals {
+  github_oidc_provider_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
 data "aws_iam_policy_document" "github_ecr_trust" {
@@ -23,7 +34,7 @@ data "aws_iam_policy_document" "github_ecr_trust" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [local.github_oidc_provider_arn]
     }
     condition {
       test     = "StringEquals"
@@ -83,7 +94,7 @@ data "aws_iam_policy_document" "github_terraform_plan_trust" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [local.github_oidc_provider_arn]
     }
     condition {
       test     = "StringEquals"
@@ -104,7 +115,40 @@ resource "aws_iam_role" "github_actions_terraform_plan" {
   tags               = var.tags
 }
 
-resource "aws_iam_role_policy_attachment" "github_actions_terraform_plan_readonly" {
-  role       = aws_iam_role.github_actions_terraform_plan.name
-  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+data "aws_iam_policy_document" "github_terraform_plan" {
+  statement {
+    sid    = "TerraformPlanDescribe"
+    effect = "Allow"
+    actions = [
+      "autoscaling:Describe*",
+      "dynamodb:Describe*",
+      "dynamodb:List*",
+      "ec2:Describe*",
+      "ecr:Describe*",
+      "ecr:List*",
+      "eks:Describe*",
+      "eks:List*",
+      "elasticloadbalancing:Describe*",
+      "iam:Get*",
+      "iam:List*",
+      "kms:Describe*",
+      "kms:List*",
+      "logs:Describe*",
+      "logs:List*",
+      "rds:Describe*",
+      "rds:List*",
+      "s3:GetBucket*",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "secretsmanager:Describe*",
+      "secretsmanager:List*",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "github_actions_terraform_plan" {
+  name   = "terraform-plan-read"
+  role   = aws_iam_role.github_actions_terraform_plan.id
+  policy = data.aws_iam_policy_document.github_terraform_plan.json
 }

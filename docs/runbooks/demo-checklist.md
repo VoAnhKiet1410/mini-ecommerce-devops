@@ -2,7 +2,7 @@
 
 ## Before the demo
 
-- [ ] Replace `YOUR_ORG` / `YOUR_AWS_ACCOUNT_ID` in Terraform and runbooks
+- [x] GitHub `VoAnhKiet1410`, AWS `962765735385`, profile `default` (see `terraform.tfvars`, `backend.tf`)
 - [ ] `terraform apply` completed; `kubectl get nodes` shows Ready
 - [ ] AWS Load Balancer Controller pods Running
 - [ ] Argo CD synced GitOps app (Phase 3)

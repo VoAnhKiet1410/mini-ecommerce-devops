@@ -1,3 +1,3 @@
 aws_region        = "ap-southeast-1"
-state_bucket_name = "YOUR_ORG-mini-ecommerce-tfstate-UNIQUE"
+state_bucket_name = "voanhkiet1410-mini-ecommerce-tfstate-962765735385"
 lock_table_name   = "mini-ecommerce-devops-tflock"

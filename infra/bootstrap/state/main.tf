@@ -39,6 +39,47 @@ resource "aws_s3_bucket_public_access_block" "tf_state" {
   restrict_public_buckets = true
 }
 
+data "aws_iam_policy_document" "tf_state_tls" {
+  statement {
+    sid    = "DenyInsecureTransport"
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.tf_state.arn,
+      "${aws_s3_bucket.tf_state.arn}/*",
+    ]
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "tf_state" {
+  bucket = aws_s3_bucket.tf_state.id
+  policy = data.aws_iam_policy_document.tf_state_tls.json
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "tf_state" {
+  bucket = aws_s3_bucket.tf_state.id
+
+  rule {
+    id     = "expire-noncurrent-versions"
+    status = "Enabled"
+
+    filter {}
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+}
+
 resource "aws_dynamodb_table" "tf_lock" {
   name         = var.lock_table_name
   billing_mode = "PAY_PER_REQUEST"
