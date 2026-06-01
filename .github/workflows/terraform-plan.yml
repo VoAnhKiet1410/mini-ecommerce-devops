@@ -13,8 +13,9 @@ permissions:
 
 env:
   AWS_REGION: ap-southeast-1
-  TF_VAR_github_org: ${{ vars.GITHUB_ORG }}
-  TF_VAR_github_repo: ${{ vars.GITHUB_REPO }}
+  # GitHub forbids repository variables named GITHUB_* — use workflow context instead
+  TF_VAR_github_org: ${{ github.repository_owner }}
+  TF_VAR_github_repo: ${{ github.event.repository.name }}
 
 jobs:
   plan:

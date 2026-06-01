@@ -18,12 +18,9 @@ terraform output -raw github_actions_terraform_plan_role_arn
 
 ## Repository variables
 
-| Variable | Example |
-|----------|---------|
-| `GITHUB_ORG` | `VoAnhKiet1410` |
-| `GITHUB_REPO` | `mini-ecommerce-devops` |
+**Không cần tạo.** `terraform-plan.yml` lấy org/repo từ `github.repository_owner` và tên repo hiện tại (GitHub **cấm** biến Actions tên bắt đầu bằng `GITHUB_`).
 
-Used by `terraform-plan.yml` for `TF_VAR_github_org` / `TF_VAR_github_repo` (no `terraform.tfvars` in git).
+Đảm bảo `github_org` / `github_repo` trong `terraform.tfvars` khớp repo thật (`VoAnhKiet1410` / `mini-ecommerce-devops`).
 
 ## Verify CI build
 
