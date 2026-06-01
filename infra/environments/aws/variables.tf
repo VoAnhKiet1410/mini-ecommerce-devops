@@ -26,3 +26,9 @@ variable "cluster_version" {
   type    = string
   default = "1.29"
 }
+
+variable "create_github_oidc_provider" {
+  type        = bool
+  default     = true
+  description = "Set false if GitHub OIDC provider already exists in this AWS account"
+}

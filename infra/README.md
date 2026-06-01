@@ -19,33 +19,42 @@ AWS infrastructure for Mini E-commerce DevOps Platform (`ap-southeast-1`).
 ## Prerequisites
 
 - Terraform >= 1.5
-- AWS CLI configured (`your-aws-profile` or default)
-- Replace placeholders: `YOUR_ORG`, `YOUR_AWS_ACCOUNT_ID`, unique S3 bucket name
+- AWS CLI profile `default` (account `962765735385`)
+- GitHub org `VoAnhKiet1410`
 
 ## Bootstrap remote state (once)
 
 ```bash
 cd infra/bootstrap/state
 cp terraform.tfvars.example terraform.tfvars
-# Edit state_bucket_name to a globally unique name
 terraform init
 terraform apply
 ```
 
-Update `infra/environments/aws/backend.tf` with the bucket name from bootstrap output.
+Bootstrap creates: versioning, encryption, TLS-only bucket policy, lifecycle on noncurrent versions.
 
 ## Deploy AWS environment
 
 ```bash
 cd infra/environments/aws
 cp terraform.tfvars.example terraform.tfvars
-# Edit github_org and other values
-terraform init
+cp backend.hcl.example backend.hcl   # edit bucket if different
+terraform init -backend-config=backend.hcl
 terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
 **Apply is manual only** — not from CI. Expect ~15–25 minutes.
+
+### GitHub OIDC provider already exists?
+
+If `terraform apply` fails on duplicate OIDC provider, set in `terraform.tfvars`:
+
+```hcl
+create_github_oidc_provider = false
+```
+
+(Wire via root module when variable is exposed — see `main.tf`.)
 
 ## Teardown
 

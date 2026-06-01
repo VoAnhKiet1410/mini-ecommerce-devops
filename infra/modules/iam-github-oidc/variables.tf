@@ -15,6 +15,12 @@ variable "aws_region" {
   default = "ap-southeast-1"
 }
 
+variable "create_github_oidc_provider" {
+  type        = bool
+  default     = true
+  description = "Set false if token.actions.githubusercontent.com OIDC provider already exists in this account"
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

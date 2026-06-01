@@ -29,6 +29,12 @@ variable "skip_final_snapshot" {
   default = true
 }
 
+variable "backup_retention_period" {
+  type        = number
+  default     = 1
+  description = "Days to retain automated backups (1 = minimal cost for ephemeral demos)"
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

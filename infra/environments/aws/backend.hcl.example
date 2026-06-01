@@ -1,0 +1,2 @@
+# Copy to backend.hcl (gitignored) and run: terraform init -backend-config=backend.hcl
+bucket = "voanhkiet1410-mini-ecommerce-tfstate-962765735385"
