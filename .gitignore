@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+.idea/
+.vscode/
+__pycache__/
+.DS_Store
+.worktrees/
+.cursor/
