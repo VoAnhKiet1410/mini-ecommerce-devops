@@ -1,0 +1,5 @@
+aws_region              = "ap-southeast-1"
+project_name            = "mini-ecommerce-devops"
+github_org              = "YOUR_ORG"
+github_repo             = "mini-ecommerce-devops"
+rds_skip_final_snapshot = true

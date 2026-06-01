@@ -1,0 +1,31 @@
+# Recruiter demo checklist
+
+## Before the demo
+
+- [ ] Replace `YOUR_ORG` / `YOUR_AWS_ACCOUNT_ID` in Terraform and runbooks
+- [ ] `terraform apply` completed; `kubectl get nodes` shows Ready
+- [ ] AWS Load Balancer Controller pods Running
+- [ ] Argo CD synced GitOps app (Phase 3)
+- [ ] ALB URL bookmarked
+
+## Demo script (~10 min)
+
+1. **Local** (optional): `docker compose up -d` → http://localhost:8080 — browse products, add to cart.
+2. **IaC**: Show `infra/modules/` and `terraform output` (EKS, ECR, RDS endpoint).
+3. **CI** (Phase 2): Show GitHub Actions build + Trivy scan + ECR push via OIDC.
+4. **GitOps**: Argo CD UI → synced `online-boutique` application.
+5. **AWS URL**: Open ALB hostname; same happy-path UI.
+6. **Observability** (Phase 4): Grafana dashboard or `kubectl top pods`.
+7. **Teardown story**: Explain `terraform destroy` and ephemeral cost model.
+
+## Talking points
+
+- Platform PostgreSQL vs app storage (Redis, in-memory catalog) — honest scope.
+- No secrets in git; Secrets Manager + External Secrets Operator.
+- `terraform plan` on PR; apply manual only.
+
+## After demo
+
+```bash
+cd infra/environments/aws && terraform destroy
+```
