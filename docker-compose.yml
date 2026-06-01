@@ -1,0 +1,88 @@
+name: mini-ecommerce-devops
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-platform}
+      POSTGRES_USER: ${POSTGRES_USER:-platform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-platform}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  productcatalogservice:
+    build:
+      context: src/productcatalogservice
+    environment:
+      PORT: "3550"
+    depends_on:
+      redis:
+        condition: service_started
+
+  currencyservice:
+    build:
+      context: src/currencyservice
+    environment:
+      PORT: "7000"
+
+  cartservice:
+    build:
+      context: src/cartservice/src
+    environment:
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  checkoutservice:
+    build:
+      context: src/checkoutservice
+    environment:
+      PORT: "5050"
+      PRODUCT_CATALOG_SERVICE_ADDR: ${PRODUCT_CATALOG_SERVICE_ADDR:-productcatalogservice:3550}
+      CART_SERVICE_ADDR: ${CART_SERVICE_ADDR:-cartservice:7070}
+      CURRENCY_SERVICE_ADDR: ${CURRENCY_SERVICE_ADDR:-currencyservice:7000}
+      SHIPPING_SERVICE_ADDR: ${SHIPPING_SERVICE_ADDR:-shippingservice:50051}
+      EMAIL_SERVICE_ADDR: ${EMAIL_SERVICE_ADDR:-emailservice:8080}
+      PAYMENT_SERVICE_ADDR: ${PAYMENT_SERVICE_ADDR:-paymentservice:50051}
+    depends_on:
+      - productcatalogservice
+      - cartservice
+      - currencyservice
+
+  frontend:
+    build:
+      context: src/frontend
+    environment:
+      PORT: "8080"
+      LISTEN_ADDR: ""
+      PRODUCT_CATALOG_SERVICE_ADDR: ${PRODUCT_CATALOG_SERVICE_ADDR:-productcatalogservice:3550}
+      CART_SERVICE_ADDR: ${CART_SERVICE_ADDR:-cartservice:7070}
+      CHECKOUT_SERVICE_ADDR: ${CHECKOUT_SERVICE_ADDR:-checkoutservice:5050}
+      CURRENCY_SERVICE_ADDR: ${CURRENCY_SERVICE_ADDR:-currencyservice:7000}
+      RECOMMENDATION_SERVICE_ADDR: ${RECOMMENDATION_SERVICE_ADDR:-recommendationservice:8080}
+      SHIPPING_SERVICE_ADDR: ${SHIPPING_SERVICE_ADDR:-shippingservice:50051}
+      AD_SERVICE_ADDR: ${AD_SERVICE_ADDR:-adservice:9555}
+      SHOPPING_ASSISTANT_SERVICE_ADDR: ${SHOPPING_ASSISTANT_SERVICE_ADDR:-shoppingassistantservice:80}
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      - productcatalogservice
+      - cartservice
+      - currencyservice
+      - checkoutservice
