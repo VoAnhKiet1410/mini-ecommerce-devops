@@ -19,8 +19,8 @@ AWS infrastructure for Mini E-commerce DevOps Platform (`ap-southeast-1`).
 ## Prerequisites
 
 - Terraform >= 1.5
-- AWS CLI profile `default` (account `962765735385`)
-- GitHub org `VoAnhKiet1410`
+- AWS CLI profile
+- GitHub org
 
 ## Bootstrap remote state (once)
 
@@ -64,3 +64,12 @@ terraform destroy
 ```
 
 See [docs/runbooks/aws-down.md](../docs/runbooks/aws-down.md).
+
+## Phase 2 — GitHub Actions (CI/CD + ECR)
+
+After AWS apply, configure OIDC secrets and run CI:
+
+- Workflows: `.github/workflows/ci-build-push.yml`, `terraform-plan.yml`, `security-scan.yml`
+- Setup: [docs/runbooks/github-actions-setup.md](../docs/runbooks/github-actions-setup.md)
+
+`terraform apply` remains **manual**; CI only builds images and runs `terraform plan` on PRs.

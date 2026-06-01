@@ -1,0 +1,7 @@
+quiet: true
+compact: true
+framework:
+  - terraform
+  - kubernetes
+skip-check:
+  # Document any intentional skips with justification in README

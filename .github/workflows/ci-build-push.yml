@@ -1,0 +1,71 @@
+name: CI Build and Push to ECR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - ".github/workflows/ci-build-push.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: frontend
+            context: src/frontend
+          - name: productcatalogservice
+            context: src/productcatalogservice
+          - name: cartservice
+            context: src/cartservice/src
+          - name: checkoutservice
+            context: src/checkoutservice
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:latest
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.service.name }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy report
+        uses: github/upload-artifact@v4
+        with:
+          name: trivy-${{ matrix.service.name }}
+          path: trivy-${{ matrix.service.name }}.sarif
