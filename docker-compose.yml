@@ -39,6 +39,8 @@ services:
       context: src/currencyservice
     environment:
       PORT: "7000"
+      DISABLE_PROFILER: "1"
+      ENABLE_TRACING: "0"
 
   cartservice:
     build:
