@@ -145,6 +145,7 @@ data "aws_iam_policy_document" "github_terraform_plan" {
       "s3:GetObject",
       "s3:ListBucket",
       "secretsmanager:Describe*",
+      "secretsmanager:GetSecretValue",
       "secretsmanager:List*",
     ]
     resources = ["*"]
