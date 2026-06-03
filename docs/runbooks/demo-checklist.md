@@ -5,7 +5,8 @@
 - [ ] `terraform.tfvars` / `backend.hcl` configured (org, repo, state bucket, AWS profile)
 - [ ] `terraform apply` completed; `kubectl get nodes` shows Ready
 - [ ] AWS Load Balancer Controller pods Running (`.\scripts\verify-aws-lbc.ps1`)
-- [ ] Argo CD synced GitOps app (Phase 3)
+- [ ] EKS workers `m7i-flex.large` (or run `terraform apply` after changing `eks_instance_types`)
+- [ ] Phase 3: `.\scripts\install-eso.ps1` → `.\scripts\install-argocd.ps1` → `.\scripts\verify-phase3.ps1` PASS
 - [ ] ALB URL bookmarked
 
 ## Demo script (~10 min)

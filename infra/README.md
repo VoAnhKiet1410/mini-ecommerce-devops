@@ -8,7 +8,7 @@ AWS infrastructure for Mini E-commerce DevOps Platform (`ap-southeast-1`).
 |------|---------|
 | `bootstrap/state/` | One-time S3 + DynamoDB for remote state (local state OK) |
 | `modules/vpc/` | VPC, public/private subnets, single NAT |
-| `modules/eks/` | EKS 1.30 (default), single `t3.small` managed node group |
+| `modules/eks/` | EKS 1.30 (default), single `m7i-flex.large` managed node group |
 | `modules/ecr/` | ECR repos for happy-path services |
 | `modules/rds/` | RDS PostgreSQL 16 (platform DB) |
 | `modules/iam-github-oidc/` | GitHub Actions OIDC roles |

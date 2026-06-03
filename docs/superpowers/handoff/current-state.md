@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-03 (Task 1.10 verified on live EKS) |
+| **Cập nhật** | 2026-06-03 (Phase 3 E2E pass on EKS) |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
 | **Unpushed commits** | 2 (`61ac2bb`, `9f5c11b`) — Phase 2 CI |
@@ -11,7 +11,7 @@
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 | **Chat gần nhất** | [Phase 1 AWS + destroy](f845b16c-bfec-4f3c-977a-dae3998b07db) |
 
-**Resume nhanh:** Phase 3 manifests đã tạo (gitops + smoke-aws) → push `mini-ecommerce-gitops` → apply AWS + ESO + Argo → ECR images + smoke ALB.
+**Resume nhanh:** Phase 3 ✅ — Argo sync + ESO + ALB smoke 200 trên `m7i-flex.large`. Phase 4 observability tiếp theo.
 
 ---
 
@@ -40,7 +40,7 @@ Chứng minh được:
 | **Repo** | **2 repo public:** `VoAnhKiet1410/mini-ecommerce-devops` (app + `infra/`), `VoAnhKiet1410/mini-ecommerce-gitops` (Kustomize). |
 | **Region** | `ap-southeast-1` |
 | **Môi trường AWS** | Một env `prod-like` (`infra/environments/aws`), teardown thường xuyên |
-| **EKS** | 1× Managed Node Group, On-Demand `t3.small`, cluster `mini-ecommerce-devops` |
+| **EKS** | 1× Managed Node Group, On-Demand **`m7i-flex.large`**, cluster `mini-ecommerce-devops` |
 | **Secrets** | AWS Secrets Manager + ESO (sync sau khi có cluster); local `.env` |
 | **CI → AWS** | GitHub OIDC; **không** `terraform apply` từ CI |
 | **DNS/TLS** | Phase 1: chỉ hostname ALB; Route 53/ACM deferred |
@@ -119,17 +119,16 @@ Chứng minh được:
 | `docs/runbooks/github-actions-setup.md` | ✅ |
 | E2E: workflow green + image trên ECR | ❌ Cần AWS stack + GitHub secrets |
 
-### Phase 3 — GitOps (code ~100%, E2E chưa chạy trên cluster)
+### Phase 3 — GitOps (100% E2E)
 
 | Task | Trạng thái |
 |------|------------|
-| 3.1 Kustomize base (`mini-ecommerce-gitops`) | ✅ local — redis, 4 ECR services, currencyservice upstream |
-| 3.2 AWS overlay ECR + ALB ingress | ✅ `962765735385` ECR URIs |
-| 3.3 ESO ClusterSecretStore + ExternalSecret RDS | ✅ trong overlay |
-| 3.4 Argo `clusters/aws/project.yaml` + `apps.yaml` | ✅ VoAnhKiet1410 repo URL |
-| 3.5 `scripts/smoke-aws.sh` + `.ps1` | ✅ app repo |
-| `docs/runbooks/aws-up.md` §4–6 | ✅ cập nhật Phase 3 |
-| E2E: push gitops, Argo sync, ALB HTTP 200 | ❌ cần AWS stack + ECR images |
+| 3.1–3.4 GitOps repo + Argo Application | ✅ pushed `mini-ecommerce-gitops` |
+| 3.5 `scripts/smoke-aws.*`, `verify-phase3.ps1` | ✅ |
+| EKS `m7i-flex.large` (pod headroom) | ✅ terraform apply 2026-06-03 |
+| ESO + ClusterSecretStore + ExternalSecret RDS | ✅ `SecretSynced` |
+| Argo CD sync `online-boutique` | ✅ Synced / Healthy |
+| ALB smoke HTTP 200 | ✅ `verify-phase3.ps1` PASS |
 
 ### Phase 4–5
 
