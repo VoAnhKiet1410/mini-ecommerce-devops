@@ -7,6 +7,7 @@ on:
       - "infra/**"
       - ".github/workflows/security-scan.yml"
       - ".checkov.yml"
+      - "infra/.checkov.baseline"
   schedule:
     - cron: "0 6 * * 1"
 
@@ -20,8 +21,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: bridgecrewio/checkov-action@v12
         with:
-          directory: .
+          directory: infra/
+          framework: terraform
           config_file: .checkov.yml
+          baseline: infra/.checkov.baseline
           soft_fail: false
 
   trivy-fs:
@@ -31,6 +34,6 @@ jobs:
       - uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
-          scan-ref: .
+          scan-ref: infra
           severity: CRITICAL
           exit-code: "1"

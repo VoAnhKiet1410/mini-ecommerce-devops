@@ -10,3 +10,5 @@ create_github_oidc_provider = true
 
 # Must match infra/bootstrap/state lock_table_name and backend.hcl dynamodb_table
 # terraform_state_lock_table_name = "mini-ecommerce-devops-tflock"
+
+# CI (terraform-plan.yml) sets TF_VAR_github_org/repo from GitHub context — keep values here aligned for local apply.
