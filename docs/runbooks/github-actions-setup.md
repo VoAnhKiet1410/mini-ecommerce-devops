@@ -45,11 +45,25 @@ terraform output -raw github_actions_terraform_plan_role_arn
 
 Record `<git-sha>` from the successful workflow run.
 
-## Verify Terraform plan on PR
+## Print secret values (local)
 
-Open a PR that touches `infra/`. Expect:
+After `terraform apply`:
 
-- Checkov in Actions log
-- PR comment with `terraform plan` output
+```powershell
+.\scripts\print-github-actions-secrets.ps1
+```
+
+Paste the three lines into **Settings → Secrets and variables → Actions**. The CLI `gh secret set` needs a token with `repo` + `admin:repo_hook` (or fine-grained **Actions secrets** write); otherwise set secrets in the GitHub UI.
+
+If you change `infra/modules/iam-github-oidc` (e.g. plan role policy), run `terraform apply` again before re-testing PR workflows.
+
+## Verify Terraform plan on PR (Task 2.2 E2E)
+
+1. Ensure all three secrets above exist (`AWS_ECR_ROLE_ARN` is only needed for image push).
+2. Open a PR that touches `infra/**` (or this workflow / `.checkov.baseline`).
+3. Expect on the PR:
+   - **Terraform Plan** workflow: `terraform fmt`, `validate`, `plan`, Checkov (baseline), sticky PR comment `<!-- terraform-plan-comment -->`
+   - **Security Scan** workflow: Checkov on `infra/` (baseline), Trivy fs on `infra/` only
+4. `gh run list --workflow "Terraform Plan" --limit 3` should show a completed run.
 
 **Note:** Plan role is read-only; `terraform apply` stays manual (see [aws-up.md](aws-up.md)).

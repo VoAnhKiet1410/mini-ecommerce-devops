@@ -1,0 +1,153 @@
+{
+    "failed_checks": [
+        {
+            "file": "/bootstrap/state/main.tf",
+            "findings": [
+                {
+                    "resource": "aws_dynamodb_table.tf_lock",
+                    "check_ids": [
+                        "CKV_AWS_119",
+                        "CKV_AWS_28"
+                    ]
+                },
+                {
+                    "resource": "aws_s3_bucket.tf_state",
+                    "check_ids": [
+                        "CKV2_AWS_62",
+                        "CKV_AWS_144",
+                        "CKV_AWS_145",
+                        "CKV_AWS_18"
+                    ]
+                },
+                {
+                    "resource": "aws_s3_bucket_lifecycle_configuration.tf_state",
+                    "check_ids": [
+                        "CKV_AWS_300"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/ecr/main.tf",
+            "findings": [
+                {
+                    "resource": "module.ecr.aws_ecr_repository.this[\"cartservice\"]",
+                    "check_ids": [
+                        "CKV_AWS_136",
+                        "CKV_AWS_51"
+                    ]
+                },
+                {
+                    "resource": "module.ecr.aws_ecr_repository.this[\"checkoutservice\"]",
+                    "check_ids": [
+                        "CKV_AWS_136",
+                        "CKV_AWS_51"
+                    ]
+                },
+                {
+                    "resource": "module.ecr.aws_ecr_repository.this[\"frontend\"]",
+                    "check_ids": [
+                        "CKV_AWS_136",
+                        "CKV_AWS_51"
+                    ]
+                },
+                {
+                    "resource": "module.ecr.aws_ecr_repository.this[\"productcatalogservice\"]",
+                    "check_ids": [
+                        "CKV_AWS_136",
+                        "CKV_AWS_51"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/eks/main.tf",
+            "findings": [
+                {
+                    "resource": "module.eks.eks",
+                    "check_ids": [
+                        "CKV_TF_1"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/iam-github-oidc/main.tf",
+            "findings": [
+                {
+                    "resource": "module.iam_github_oidc.aws_iam_policy_document.github_terraform_plan",
+                    "check_ids": [
+                        "CKV_AWS_108",
+                        "CKV_AWS_356"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/iam-irsa/main.tf",
+            "findings": [
+                {
+                    "resource": "module.iam_irsa.alb_controller",
+                    "check_ids": [
+                        "CKV_TF_1"
+                    ]
+                },
+                {
+                    "resource": "module.iam_irsa.external_secrets",
+                    "check_ids": [
+                        "CKV_TF_1"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/rds/main.tf",
+            "findings": [
+                {
+                    "resource": "module.rds.aws_db_instance.this",
+                    "check_ids": [
+                        "CKV2_AWS_30",
+                        "CKV2_AWS_60",
+                        "CKV_AWS_118",
+                        "CKV_AWS_129",
+                        "CKV_AWS_157",
+                        "CKV_AWS_161",
+                        "CKV_AWS_226",
+                        "CKV_AWS_293",
+                        "CKV_AWS_353"
+                    ]
+                },
+                {
+                    "resource": "module.rds.aws_security_group.this",
+                    "check_ids": [
+                        "CKV_AWS_23",
+                        "CKV_AWS_382"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/secrets/main.tf",
+            "findings": [
+                {
+                    "resource": "module.secrets.aws_secretsmanager_secret.rds_master",
+                    "check_ids": [
+                        "CKV2_AWS_57",
+                        "CKV_AWS_149"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/modules/vpc/main.tf",
+            "findings": [
+                {
+                    "resource": "module.vpc.vpc",
+                    "check_ids": [
+                        "CKV_TF_1"
+                    ]
+                }
+            ]
+        }
+    ]
+}
