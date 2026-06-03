@@ -13,8 +13,9 @@ terraform {
 }
 
 resource "random_password" "master" {
-  length  = 24
-  special = true
+  length           = 24
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 resource "aws_db_subnet_group" "this" {
@@ -49,7 +50,7 @@ resource "aws_db_instance" "this" {
   allocated_storage       = 20
   storage_type            = "gp3"
   storage_encrypted       = true
-  backup_retention_period = var.backup_retention_period
+  backup_retention_period = 1
   deletion_protection     = false
   db_name                 = var.database_name
   username                = var.master_username
