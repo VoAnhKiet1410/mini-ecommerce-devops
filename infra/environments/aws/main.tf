@@ -13,12 +13,13 @@ module "vpc" {
 }
 
 module "eks" {
-  source          = "../../modules/eks"
-  cluster_name    = var.project_name
-  cluster_version = var.cluster_version
-  vpc_id          = module.vpc.vpc_id
-  subnet_ids      = module.vpc.private_subnets
-  tags            = local.tags
+  source                               = "../../modules/eks"
+  cluster_name                         = var.project_name
+  cluster_version                      = var.cluster_version
+  vpc_id                               = module.vpc.vpc_id
+  subnet_ids                           = module.vpc.private_subnets
+  cluster_endpoint_public_access_cidrs = var.cluster_endpoint_public_access_cidrs
+  tags                                 = local.tags
 }
 
 module "ecr" {
@@ -41,13 +42,14 @@ module "rds" {
 }
 
 module "iam_github_oidc" {
-  source                      = "../../modules/iam-github-oidc"
-  project_name                = var.project_name
-  github_org                  = var.github_org
-  github_repo                 = var.github_repo
-  aws_region                  = var.aws_region
-  create_github_oidc_provider = var.create_github_oidc_provider
-  tags                        = local.tags
+  source                          = "../../modules/iam-github-oidc"
+  project_name                    = var.project_name
+  github_org                      = var.github_org
+  github_repo                     = var.github_repo
+  aws_region                      = var.aws_region
+  terraform_state_lock_table_name = var.terraform_state_lock_table_name
+  create_github_oidc_provider     = var.create_github_oidc_provider
+  tags                            = local.tags
 }
 
 module "iam_irsa" {

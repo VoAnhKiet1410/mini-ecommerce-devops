@@ -2,16 +2,16 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-03 (Phase 0 verified) |
+| **Cập nhật** | 2026-06-03 (Task 1.10 verified on live EKS) |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
 | **Unpushed commits** | 2 (`61ac2bb`, `9f5c11b`) — Phase 2 CI |
 | **Working tree** | 8 file modified + untracked (xem §3) |
-| **AWS runtime** | **Trống** — đã `terraform destroy` + xóa bootstrap S3/DynamoDB |
+| **AWS runtime** | **EKS ACTIVE** — cluster `mini-ecommerce-devops` 1.30; LBC pods Running |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 | **Chat gần nhất** | [Phase 1 AWS + destroy](f845b16c-bfec-4f3c-977a-dae3998b07db) |
 
-**Resume nhanh:** Phase 0 xong → commit §3 nếu đồng ý → `git push` → bootstrap + `terraform apply` khi cần AWS → Task 1.10 (Helm LBC) → Phase 3 GitOps (Kustomize).
+**Resume nhanh:** Phase 3 manifests đã tạo (gitops + smoke-aws) → push `mini-ecommerce-gitops` → apply AWS + ESO + Argo → ECR images + smoke ALB.
 
 ---
 
@@ -108,7 +108,7 @@ Chứng minh được:
 | Hardening (OIDC conditional, S3 policy, RDS encrypt, ECR lifecycle, lock files) | ✅ commit `5c15567` |
 | `terraform apply` (bootstrap + env) | ✅ đã chạy trong session trước |
 | `terraform destroy` env + bootstrap S3/DynamoDB | ✅ AWS account **sạch** |
-| **1.10** LBC Helm trên cluster | ⚠️ **Script + runbook** chuẩn bị xong; **chưa** chạy Helm (không có cluster) |
+| **1.10** LBC Helm trên cluster | ✅ 2026-06-03 — 2 pods `Running`; `verify-aws-lbc.ps1` PASS (Helm optional nếu đã cài) |
 
 ### Phase 2 — CI/CD (~90% code)
 
@@ -119,17 +119,27 @@ Chứng minh được:
 | `docs/runbooks/github-actions-setup.md` | ✅ |
 | E2E: workflow green + image trên ECR | ❌ Cần AWS stack + GitHub secrets |
 
-### Phase 3–5
+### Phase 3 — GitOps (code ~100%, E2E chưa chạy trên cluster)
 
-Chưa bắt đầu (GitOps, observability, optional hardening).
+| Task | Trạng thái |
+|------|------------|
+| 3.1 Kustomize base (`mini-ecommerce-gitops`) | ✅ local — redis, 4 ECR services, currencyservice upstream |
+| 3.2 AWS overlay ECR + ALB ingress | ✅ `962765735385` ECR URIs |
+| 3.3 ESO ClusterSecretStore + ExternalSecret RDS | ✅ trong overlay |
+| 3.4 Argo `clusters/aws/project.yaml` + `apps.yaml` | ✅ VoAnhKiet1410 repo URL |
+| 3.5 `scripts/smoke-aws.sh` + `.ps1` | ✅ app repo |
+| `docs/runbooks/aws-up.md` §4–6 | ✅ cập nhật Phase 3 |
+| E2E: push gitops, Argo sync, ALB HTTP 200 | ❌ cần AWS stack + ECR images |
+
+### Phase 4–5
+
+Chưa bắt đầu (observability, optional hardening).
 
 ---
 
 ## 5. Task đang làm dở
 
-1. **Task 1.10 — AWS Load Balancer Controller**
-   - Đã có: `scripts/install-aws-lbc.ps1`, cập nhật `docs/runbooks/aws-up.md` (uncommitted).
-   - Cần: `terraform apply` lại stack → chạy script → verify pods `Running` → commit.
+1. **Commit working tree** — EKS/IRSA/OIDC, LBC scripts (`install-aws-lbc.*`, `verify-aws-lbc.*`), runbooks.
 
 2. **Đồng bộ repo với bài học từ `terraform apply` thực tế**
    - EKS 1.30, public API endpoint, RDS `override_special` — **đang unstaged**, chưa trên `origin/main`.
@@ -147,7 +157,7 @@ Chưa bắt đầu (GitOps, observability, optional hardening).
 
 | Vấn đề | Trạng thái / cách xử lý |
 |--------|-------------------------|
-| **Không có cluster AWS** | Đã destroy — Task 1.10 **blocked** cho đến khi apply lại. |
+| **Helm không có trong PATH (Windows)** | Dùng `verify-aws-lbc.ps1`; `install-aws-lbc.ps1` skip Helm nếu pods đã Ready. |
 | **`kubectl` timeout `10.0.x.x:443`** | Đã diagnose: API server private-only; fix trong unstaged `cluster_endpoint_public_access = true`. |
 | **RDS password invalid chars** | Lần apply 1 fail; fix `override_special` (unstaged, chưa commit). |
 | **EKS 1.29 AMI unsupported** | Đã nâng 1.30 khi apply; default trong **commit** vẫn 1.29 — cần commit unstaged. |
@@ -188,7 +198,7 @@ Chưa bắt đầu (GitOps, observability, optional hardening).
 | `docker compose` / `scripts/smoke-local.sh` | **Pass** | HTTP 200 tại `:8080` (2026-06-03) |
 | `scripts/verify-platform-db.sh` / `.ps1` | **Pass** | `SELECT 1` qua `docker compose exec postgres` |
 | GitHub Actions CI/Terraform plan | **Chưa verify E2E** | Workflows committed; AWS + secrets + push cần thiết |
-| Helm LBC / `kubectl wait` (Task 1.10) | **Chưa chạy** | Không cluster |
+| Helm LBC / `kubectl wait` (Task 1.10) | **Pass** | 2 pods Running; `verify-aws-lbc.ps1` |
 | Unit tests trong `src/` | **Không chạy** | Không phải focus Phase 1 |
 
 ---

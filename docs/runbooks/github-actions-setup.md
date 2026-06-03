@@ -22,6 +22,15 @@ terraform output -raw github_actions_terraform_plan_role_arn
 
 Đảm bảo `github_org` / `github_repo` trong `terraform.tfvars` khớp repo thật (`VoAnhKiet1410` / `mini-ecommerce-devops`).
 
+**OIDC trust (sau `terraform apply`):**
+
+| Role | GitHub `sub` claim được phép |
+|------|------------------------------|
+| ECR push | `repo:<org>/<repo>:ref:refs/heads/main` |
+| Terraform plan | `repo:<org>/<repo>:pull_request` |
+
+`workflow_dispatch` trên nhánh `main` dùng cùng claim ECR như push. PR workflow **không** assume role ECR.
+
 ## Verify CI build
 
 1. Merge Phase 2 workflows to `main`.
