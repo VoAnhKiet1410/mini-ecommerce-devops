@@ -82,12 +82,21 @@ After AWS apply, configure OIDC secrets and run CI:
 
 - **GitHub OIDC:** ECR role trusts `ref:refs/heads/main` only; Terraform plan role trusts `pull_request` only. Re-apply IAM after changing `github_org` / `github_repo`.
 - **EKS API:** Public endpoint is enabled for laptop `kubectl` (demo). Set `cluster_endpoint_public_access_cidrs` in `terraform.tfvars` to your IP/32 when possible.
-- **Checkov:** `.checkov.yml` has no intentional skips yet; `security-scan.yml` fails on findings. `terraform-plan.yml` uses `soft_fail: true` until the infra baseline is clean.
+- **Checkov:** Portfolio demo baseline in `infra/.checkov.baseline` (S3 state bucket, single-AZ RDS, EKS public API, etc.). `security-scan.yml` fails on **new** findings only. `terraform-plan.yml` uses `soft_fail: true` for Checkov so plan comments still post.
 
 ## Checkov
 
 Scans run in GitHub Actions (`security-scan.yml`, `terraform-plan.yml`). Local:
 
 ```bash
-docker run --rm -v "$(pwd):/repo" bridgecrew/checkov -d /repo/infra --config-file /repo/.checkov.yml
+docker run --rm -v "$(pwd):/repo" bridgecrew/checkov -d /repo/infra \
+  --config-file /repo/.checkov.yml --baseline /repo/infra/.checkov.baseline
+```
+
+Regenerate baseline after intentional infra changes:
+
+```bash
+docker run --rm -v "$(pwd):/repo" -w /repo bridgecrew/checkov -d /repo/infra \
+  --config-file /repo/.checkov.yml --framework terraform --create-baseline
+# writes infra/.checkov.baseline — review diff before commit
 ```
