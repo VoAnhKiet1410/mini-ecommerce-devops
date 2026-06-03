@@ -7,8 +7,11 @@ Portfolio DevOps project based on [Google microservices-demo](https://github.com
 ```bash
 cp .env.example .env
 docker compose up --build -d
+./scripts/verify-platform-db.sh
 ./scripts/smoke-local.sh
 ```
+
+**Windows (PowerShell):** after `docker compose up --build -d`, run `.\scripts\verify-platform-db.ps1` and `.\scripts\smoke-local.ps1`.
 
 Open http://localhost:8080
 
