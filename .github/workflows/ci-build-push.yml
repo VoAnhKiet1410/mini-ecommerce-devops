@@ -56,7 +56,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:latest
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
           format: sarif
@@ -65,7 +65,7 @@ jobs:
           exit-code: "0"
 
       - name: Upload Trivy report
-        uses: github/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-${{ matrix.service.name }}
           path: trivy-${{ matrix.service.name }}.sarif
