@@ -44,3 +44,9 @@ variable "cluster_endpoint_public_access_cidrs" {
   default     = ["0.0.0.0/0"]
   description = "Restrict EKS public API to your IP(s), e.g. [\"203.0.113.10/32\"], for safer demos."
 }
+
+variable "eks_instance_types" {
+  type        = list(string)
+  default     = ["m7i-flex.large"]
+  description = "EKS managed node group instance types (ap-southeast-1)."
+}

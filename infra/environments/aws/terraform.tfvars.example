@@ -8,6 +8,9 @@ create_github_oidc_provider = true
 # Optional: restrict EKS public API to your IP (recommended for demos)
 # cluster_endpoint_public_access_cidrs = ["203.0.113.10/32"]
 
+# EKS worker (default: m7i-flex.large — more pod headroom than t3.small)
+# eks_instance_types = ["m7i-flex.large"]
+
 # Must match infra/bootstrap/state lock_table_name and backend.hcl dynamodb_table
 # terraform_state_lock_table_name = "mini-ecommerce-devops-tflock"
 

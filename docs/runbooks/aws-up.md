@@ -90,11 +90,21 @@ Expected: pods `Running`.
 
 ## 4. Install External Secrets Operator
 
+**Prerequisite:** EKS workers should use **`m7i-flex.large`** (or similar) so Argo CD + app + ESO fit on one node — see `eks_instance_types` in `terraform.tfvars`.
+
+```powershell
+.\scripts\install-eso.ps1
+```
+
+```bash
+./scripts/install-eso.sh
+```
+
+**Manual (Helm):**
+
 ```bash
 cd infra/environments/aws
 ESO_ROLE_ARN=$(terraform output -raw external_secrets_role_arn)
-cd -
-
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo update
 helm upgrade --install external-secrets external-secrets/external-secrets \
@@ -102,60 +112,41 @@ helm upgrade --install external-secrets external-secrets/external-secrets \
   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${ESO_ROLE_ARN}"
 ```
 
-Apply GitOps manifests from [mini-ecommerce-gitops](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) (synced by Argo CD in step 5):
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/apps/online-boutique/overlays/aws/external-secrets/cluster-secret-store.yaml
-```
-
-Or wait for Argo CD to sync the AWS overlay (includes `ClusterSecretStore` + `ExternalSecret` for `mini-ecommerce-devops/rds/master`).
+`ClusterSecretStore` + `ExternalSecret` for RDS are in the GitOps AWS overlay — synced by Argo CD in step 5.
 
 ## 5. Install Argo CD and sync GitOps
 
-```bash
-kubectl create namespace argocd
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo update
-helm upgrade --install argocd argo/argo-cd -n argocd
-kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+```powershell
+.\scripts\install-argocd.ps1
 ```
 
-Register the GitOps repo (public) and bootstrap the Application:
-
 ```bash
-# Clone or use raw manifests from mini-ecommerce-gitops
-kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/clusters/aws/project.yaml
-kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/clusters/aws/apps.yaml
+./scripts/install-argocd.sh
 ```
+
+**Manual:** Helm install + apply manifests from [mini-ecommerce-gitops](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) `clusters/aws/`.
 
 Wait for sync:
 
 ```bash
 kubectl get application online-boutique -n argocd
 kubectl get pods -n boutique
+kubectl get clustersecretstore aws-secretsmanager
+kubectl get externalsecret -n boutique
 ```
 
 **Prerequisite:** ECR images tagged `latest` for `frontend`, `productcatalogservice`, `cartservice`, `checkoutservice` (run CI on `main` after Terraform apply).
 
-## 6. Verify application ingress
-
-```bash
-kubectl get ingress -n boutique
-```
-
-Note the ALB hostname (may take 2–3 minutes after ingress sync), then:
-
-```bash
-curl -I "http://<alb-host>/"
-# or
-./scripts/smoke-aws.sh <alb-host>
-```
+## 6. Verify Phase 3 (ALB smoke + GitOps)
 
 ```powershell
-.\scripts\smoke-aws.ps1 -AlbHostname <alb-host>
+.\scripts\verify-phase3.ps1
 ```
 
-Expected: HTTP **200** from frontend (after GitOps sync and ECR images pulled).
+```bash
+ALB=$(kubectl get ingress frontend-ingress -n boutique -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+./scripts/smoke-aws.sh "$ALB"
+```
 
 ## 7. Platform database
 
