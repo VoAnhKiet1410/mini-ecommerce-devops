@@ -61,8 +61,8 @@ jobs:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
           format: sarif
           output: trivy-${{ matrix.service.name }}.sarif
-          severity: CRITICAL,HIGH
-          exit-code: "0"
+          severity: CRITICAL
+          exit-code: "1"
 
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4

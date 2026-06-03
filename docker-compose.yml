@@ -30,9 +30,6 @@ services:
       context: src/productcatalogservice
     environment:
       PORT: "3550"
-    depends_on:
-      redis:
-        condition: service_started
 
   currencyservice:
     build:

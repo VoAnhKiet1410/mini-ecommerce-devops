@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "aws-billing-and-cost-management": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-billing-and-cost-management/SKILL.md",
+      "computedHash": "b3190b0618983445e65d6343dda2ee267a026638ee10873fdbe7a8a2c29f033a"
+    },
+    "aws-iam": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-iam/SKILL.md",
+      "computedHash": "0b5700fc691fffde3be282c55993c58e78e2738b3d572b98f9eed19706fd1856"
+    },
+    "aws-observability": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-observability/SKILL.md",
+      "computedHash": "575b5df0f82157a3205968709566f039e386cd88893edd8ab9bea6b9213a0952"
+    },
+    "devops-cicd": {
+      "source": "miles990/claude-software-skills",
+      "sourceType": "github",
+      "skillPath": "software-engineering/devops-cicd/SKILL.md",
+      "computedHash": "0177e710cea7accdca0dcc932ef2d185f6a2a926e4ebb60b4e8cb8c09cdf9750"
+    },
+    "devops-engineer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/devops-engineer/SKILL.md",
+      "computedHash": "b5fefdd43470cf510937c882440fb0759327adfe4a21b511829e545e5faa988e"
+    },
+    "docker-kubernetes": {
+      "source": "absolutelyskilled/absolutelyskilled",
+      "sourceType": "github",
+      "skillPath": "skills/docker-kubernetes/SKILL.md",
+      "computedHash": "eda4b60a3e4fe9342dc43187293ab6af5d9dcdb74be4bb09aa6db6b0f0de7a33"
+    },
+    "github-actions-docs": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/github-actions-docs/SKILL.md",
+      "computedHash": "ead3fa2aff18e829c468dee593e1dc897aa95dc7a07d9ff8ff9f30c296b19af8"
+    },
+    "terraform-engineer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/terraform-engineer/SKILL.md",
+      "computedHash": "bf18190b6fda8cfd3a657e575ec5f142b882ade36f8277ec5586d08be9a257e5"
+    }
+  }
+}

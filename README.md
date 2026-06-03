@@ -1,5 +1,7 @@
 # Mini E-commerce DevOps Platform
 
+**Agent skills (DevOps/AWS):** first-time setup: `.\scripts\setup-agent-skills.ps1` (Windows) or `./scripts/setup-agent-skills.sh`. See [AGENTS.md](AGENTS.md) and [docs/agent-skills.md](docs/agent-skills.md).
+
 Portfolio DevOps project based on [Google microservices-demo](https://github.com/GoogleCloudPlatform/microservices-demo) (happy-path services only).
 
 ## Quick start (local)

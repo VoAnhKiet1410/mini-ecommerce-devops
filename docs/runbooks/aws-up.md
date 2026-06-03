@@ -4,10 +4,21 @@ Ephemeral **prod-like** stack in `ap-southeast-1`. Tear down when finished — s
 
 ## Prerequisites
 
-- Terraform >= 1.5, AWS CLI, `kubectl`, `helm`
+- Terraform >= 1.5, AWS CLI, `kubectl`
+- `helm` — required only for **first** LBC install; use `scripts/verify-aws-lbc.ps1` if Helm is not on PATH (Windows: `winget install Helm.Helm`)
 - Bootstrap remote state applied (`infra/bootstrap/state`)
 - `terraform.tfvars` configured in `infra/environments/aws`
-- Configured for GitHub `VoAnhKiet1410`, AWS account `962765735385`, CLI profile `default`
+- `terraform.tfvars` matches your GitHub org/repo and AWS account (see `terraform.tfvars.example`)
+
+### EKS API security (demo)
+
+The cluster uses a **public Kubernetes API endpoint** so `kubectl` works from your laptop. By default all CIDRs (`0.0.0.0/0`) can reach it. For safer demos, set in `terraform.tfvars`:
+
+```hcl
+cluster_endpoint_public_access_cidrs = ["YOUR_PUBLIC_IP/32"]
+```
+
+Re-apply after changing. Private endpoint remains enabled for in-VPC access.
 
 ## 1. Apply infrastructure
 
@@ -37,10 +48,19 @@ Expected: one node in `Ready` state.
 
 **IAM:** Terraform module `infra/modules/iam-irsa` already attaches the AWS Load Balancer Controller policy via IRSA (`attach_load_balancer_controller_policy = true`). No extra IAM JSON download needed.
 
-**Helm (PowerShell):**
+**Helm (script):** Skips install if controller pods are already `Ready`.
 
 ```powershell
 .\scripts\install-aws-lbc.ps1
+# or verify only (no Helm):
+.\scripts\verify-aws-lbc.ps1
+```
+
+```bash
+chmod +x scripts/install-aws-lbc.sh scripts/verify-aws-lbc.sh
+./scripts/install-aws-lbc.sh
+# or verify only:
+./scripts/verify-aws-lbc.sh
 ```
 
 **Helm (manual):**
@@ -71,24 +91,51 @@ Expected: pods `Running`.
 ## 4. Install External Secrets Operator
 
 ```bash
+cd infra/environments/aws
+ESO_ROLE_ARN=$(terraform output -raw external_secrets_role_arn)
+cd -
+
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo update
 helm upgrade --install external-secrets external-secrets/external-secrets \
   -n external-secrets --create-namespace \
-  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=arn:aws:iam::962765735385:role/mini-ecommerce-devops-external-secrets
+  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${ESO_ROLE_ARN}"
 ```
 
-Configure `ClusterSecretStore` for AWS Secrets Manager (Phase 3).
+Apply GitOps manifests from [mini-ecommerce-gitops](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) (synced by Argo CD in step 5):
 
-## 5. Install Argo CD
+```bash
+kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/apps/online-boutique/overlays/aws/external-secrets/cluster-secret-store.yaml
+```
+
+Or wait for Argo CD to sync the AWS overlay (includes `ClusterSecretStore` + `ExternalSecret` for `mini-ecommerce-devops/rds/master`).
+
+## 5. Install Argo CD and sync GitOps
 
 ```bash
 kubectl create namespace argocd
 helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
 helm upgrade --install argocd argo/argo-cd -n argocd
+kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
 ```
 
-Register the GitOps repo and apply `clusters/aws/apps.yaml` after **Phase 3**.
+Register the GitOps repo (public) and bootstrap the Application:
+
+```bash
+# Clone or use raw manifests from mini-ecommerce-gitops
+kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/clusters/aws/project.yaml
+kubectl apply -f https://raw.githubusercontent.com/VoAnhKiet1410/mini-ecommerce-gitops/main/clusters/aws/apps.yaml
+```
+
+Wait for sync:
+
+```bash
+kubectl get application online-boutique -n argocd
+kubectl get pods -n boutique
+```
+
+**Prerequisite:** ECR images tagged `latest` for `frontend`, `productcatalogservice`, `cartservice`, `checkoutservice` (run CI on `main` after Terraform apply).
 
 ## 6. Verify application ingress
 
@@ -96,13 +143,19 @@ Register the GitOps repo and apply `clusters/aws/apps.yaml` after **Phase 3**.
 kubectl get ingress -n boutique
 ```
 
-Note the ALB hostname, then:
+Note the ALB hostname (may take 2–3 minutes after ingress sync), then:
 
 ```bash
 curl -I "http://<alb-host>/"
+# or
+./scripts/smoke-aws.sh <alb-host>
 ```
 
-Expected: HTTP response from frontend (after GitOps sync).
+```powershell
+.\scripts\smoke-aws.ps1 -AlbHostname <alb-host>
+```
+
+Expected: HTTP **200** from frontend (after GitOps sync and ECR images pulled).
 
 ## 7. Platform database
 

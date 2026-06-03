@@ -2,9 +2,9 @@
 
 ## Before the demo
 
-- [x] GitHub `VoAnhKiet1410`, AWS `962765735385`, profile `default` (see `terraform.tfvars`, `backend.tf`)
+- [ ] `terraform.tfvars` / `backend.hcl` configured (org, repo, state bucket, AWS profile)
 - [ ] `terraform apply` completed; `kubectl get nodes` shows Ready
-- [ ] AWS Load Balancer Controller pods Running
+- [ ] AWS Load Balancer Controller pods Running (`.\scripts\verify-aws-lbc.ps1`)
 - [ ] Argo CD synced GitOps app (Phase 3)
 - [ ] ALB URL bookmarked
 

@@ -13,4 +13,6 @@ backend.hcl
 __pycache__/
 .DS_Store
 .worktrees/
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**

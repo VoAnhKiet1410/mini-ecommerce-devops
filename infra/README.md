@@ -8,13 +8,17 @@ AWS infrastructure for Mini E-commerce DevOps Platform (`ap-southeast-1`).
 |------|---------|
 | `bootstrap/state/` | One-time S3 + DynamoDB for remote state (local state OK) |
 | `modules/vpc/` | VPC, public/private subnets, single NAT |
-| `modules/eks/` | EKS 1.29, single `t3.small` managed node group |
+| `modules/eks/` | EKS 1.30 (default), single `t3.small` managed node group |
 | `modules/ecr/` | ECR repos for happy-path services |
 | `modules/rds/` | RDS PostgreSQL 16 (platform DB) |
 | `modules/iam-github-oidc/` | GitHub Actions OIDC roles |
 | `modules/iam-irsa/` | IRSA for ALB controller and External Secrets |
 | `modules/secrets/` | Secrets Manager (RDS credentials) |
 | `environments/aws/` | Root module wiring all modules |
+
+## Agent skills
+
+Terraform/IAM tasks in this repo: see [AGENTS.md](../AGENTS.md) and skill **terraform-engineer** / **aws-iam** under [`.agents/skills/`](../.agents/skills/).
 
 ## Prerequisites
 
@@ -54,7 +58,7 @@ If `terraform apply` fails on duplicate OIDC provider, set in `terraform.tfvars`
 create_github_oidc_provider = false
 ```
 
-(Wire via root module when variable is exposed — see `main.tf`.)
+Set in `infra/environments/aws/terraform.tfvars` (wired in root `main.tf`).
 
 ## Teardown
 
@@ -73,3 +77,17 @@ After AWS apply, configure OIDC secrets and run CI:
 - Setup: [docs/runbooks/github-actions-setup.md](../docs/runbooks/github-actions-setup.md)
 
 `terraform apply` remains **manual**; CI only builds images and runs `terraform plan` on PRs.
+
+## Security notes
+
+- **GitHub OIDC:** ECR role trusts `ref:refs/heads/main` only; Terraform plan role trusts `pull_request` only. Re-apply IAM after changing `github_org` / `github_repo`.
+- **EKS API:** Public endpoint is enabled for laptop `kubectl` (demo). Set `cluster_endpoint_public_access_cidrs` in `terraform.tfvars` to your IP/32 when possible.
+- **Checkov:** `.checkov.yml` has no intentional skips yet; `security-scan.yml` fails on findings. `terraform-plan.yml` uses `soft_fail: true` until the infra baseline is clean.
+
+## Checkov
+
+Scans run in GitHub Actions (`security-scan.yml`, `terraform-plan.yml`). Local:
+
+```bash
+docker run --rm -v "$(pwd):/repo" bridgecrew/checkov -d /repo/infra --config-file /repo/.checkov.yml
+```

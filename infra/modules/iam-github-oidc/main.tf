@@ -44,7 +44,9 @@ data "aws_iam_policy_document" "github_ecr_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:*"]
+      values = [
+        "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_ecr_branch}",
+      ]
     }
   }
 }
@@ -104,7 +106,9 @@ data "aws_iam_policy_document" "github_terraform_plan_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:*"]
+      values = [
+        "repo:${var.github_org}/${var.github_repo}:pull_request",
+      ]
     }
   }
 }
@@ -144,6 +148,20 @@ data "aws_iam_policy_document" "github_terraform_plan" {
       "secretsmanager:List*",
     ]
     resources = ["*"]
+  }
+
+  statement {
+    sid    = "TerraformStateLock"
+    effect = "Allow"
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+    ]
+    resources = [
+      "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table_name}",
+    ]
   }
 }
 
