@@ -1,46 +1,48 @@
-# Push app repo after creating empty public repos on GitHub:
-#   https://github.com/VoAnhKiet1410/mini-ecommerce-devops
-#   https://github.com/VoAnhKiet1410/mini-ecommerce-gitops
-#
-# Requires GITHUB_TOKEN (or gh auth login) with repo push scope.
-
 $ErrorActionPreference = "Stop"
 $org = "VoAnhKiet1410"
 $appRepo = "$org/mini-ecommerce-devops"
 $gitopsRepo = "$org/mini-ecommerce-gitops"
 
-$token = $env:GITHUB_TOKEN
-if (-not $token) {
-  $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-    [System.Environment]::GetEnvironmentVariable("Path", "User")
-  $token = gh auth token 2>$null
+Remove-Item Env:GITHUB_TOKEN, Env:GH_TOKEN -ErrorAction SilentlyContinue
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+  [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+$status = gh auth status 2>&1
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Not logged in. Run: gh auth login -h github.com -p https -w -s repo"
+  Write-Host $status
+  exit 1
 }
-if (-not $token) {
-  Write-Error "Set GITHUB_TOKEN or run: gh auth login"
-}
+
+gh auth setup-git | Out-Null
 
 function Push-Repo {
   param([string]$Path, [string]$Name)
   Push-Location $Path
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
   try {
-    $url = "https://x-access-token:${token}@github.com/${Name}.git"
-    git remote remove origin 2>$null
-    git remote add origin $url
-    git branch -M main 2>$null
-    git push -u origin main
+    $remotes = @(git remote 2>$null)
+    if ($remotes -contains "origin") {
+      git remote remove origin 2>$null | Out-Null
+    }
+    git remote add origin "https://github.com/${Name}.git"
+    git branch -M main 2>$null | Out-Null
+    git push -u origin main 2>&1 | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+      throw "git push failed for $Name"
+    }
     Write-Host "Pushed $Name"
   } finally {
+    $ErrorActionPreference = $prevEap
     Pop-Location
   }
 }
 
 Push-Repo -Path (Resolve-Path (Join-Path $PSScriptRoot "..")) -Name $appRepo
-$gitopsPath = Resolve-Path (Join-Path $PSScriptRoot "..\..\mini-ecommerce-gitops") -ErrorAction SilentlyContinue
-if (-not $gitopsPath) {
-  $gitopsPath = "d:\mini-ecommerce-gitops"
-}
+$gitopsPath = "d:\mini-ecommerce-gitops"
 if (Test-Path $gitopsPath) {
   Push-Repo -Path $gitopsPath -Name $gitopsRepo
 } else {
-  Write-Warning "GitOps repo not found at $gitopsPath — clone or create $gitopsRepo manually."
+  Write-Warning "GitOps repo not found at $gitopsPath"
 }

@@ -24,7 +24,7 @@ variable "rds_skip_final_snapshot" {
 
 variable "cluster_version" {
   type    = string
-  default = "1.29"
+  default = "1.30"
 }
 
 variable "create_github_oidc_provider" {

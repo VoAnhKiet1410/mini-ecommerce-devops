@@ -33,11 +33,23 @@ kubectl get nodes
 
 Expected: one node in `Ready` state.
 
-## 3. Install AWS Load Balancer Controller
+## 3. Install AWS Load Balancer Controller (Task 1.10)
 
-Download the IAM policy JSON for [AWS Load Balancer Controller v2.7+](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/deploy/installation/) if not fully covered by Terraform IRSA.
+**IAM:** Terraform module `infra/modules/iam-irsa` already attaches the AWS Load Balancer Controller policy via IRSA (`attach_load_balancer_controller_policy = true`). No extra IAM JSON download needed.
+
+**Helm (PowerShell):**
+
+```powershell
+.\scripts\install-aws-lbc.ps1
+```
+
+**Helm (manual):**
 
 ```bash
+cd infra/environments/aws
+ROLE_ARN=$(terraform output -raw alb_controller_role_arn)
+aws eks update-kubeconfig --region ap-southeast-1 --name mini-ecommerce-devops
+
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update
 helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
@@ -45,10 +57,8 @@ helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-contro
   --set clusterName=mini-ecommerce-devops \
   --set serviceAccount.create=true \
   --set serviceAccount.name=aws-load-balancer-controller \
-  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=arn:aws:iam::962765735385:role/mini-ecommerce-devops-alb-controller
+  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${ROLE_ARN}"
 ```
-
-Replace the role ARN with `terraform output alb_controller_role_arn`.
 
 Verify:
 
