@@ -55,14 +55,15 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:latest
 
+      # Phase 2: report CRITICAL/HIGH in SARIF; do not fail the job (spec O3 — tighten in Phase 5).
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
           format: sarif
           output: trivy-${{ matrix.service.name }}.sarif
-          severity: CRITICAL
-          exit-code: "1"
+          severity: CRITICAL,HIGH
+          exit-code: "0"
 
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4

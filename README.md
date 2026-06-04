@@ -27,7 +27,7 @@ See [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md). **Run `terraform destroy
 
 ## CI/CD (Phase 2)
 
-GitHub Actions build happy-path images, scan with Trivy, and push to ECR via OIDC. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
+GitHub Actions build happy-path images, scan with Trivy (SARIF for CRITICAL/HIGH; warn-only on `main`), and push to ECR via OIDC. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
 
 ## Platform database disclosure
 
