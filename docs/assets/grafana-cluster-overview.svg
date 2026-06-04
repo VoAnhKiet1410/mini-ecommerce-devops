@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480">
+  <rect width="960" height="480" fill="#0b1220"/>
+  <text x="48" y="56" fill="#e5e7eb" font-family="Segoe UI, system-ui, sans-serif" font-size="22" font-weight="600">Cluster overview  Online Boutique</text>
+  <text x="48" y="88" fill="#94a3b8" font-family="Segoe UI, system-ui, sans-serif" font-size="14">Placeholder  replace with docs/assets/grafana-cluster-overview.png via scripts/capture-grafana-screenshot.ps1</text>
+  <rect x="48" y="120" width="420" height="160" rx="8" fill="#111827" stroke="#374151"/>
+  <rect x="492" y="120" width="420" height="160" rx="8" fill="#111827" stroke="#374151"/>
+  <text x="64" y="150" fill="#60a5fa" font-size="13">Boutique pods  CPU rate</text>
+  <text x="508" y="150" fill="#34d399" font-size="13">Boutique pods  memory working set</text>
+  <polyline points="64,250 120,200 180,220 260,170 340,190 420,160" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <polyline points="508,250 560,210 620,230 700,180 780,200 860,170" fill="none" stroke="#34d399" stroke-width="2"/>
+  <rect x="48" y="300" width="864" height="72" rx="8" fill="#111827" stroke="#374151"/>
+  <text x="64" y="340" fill="#fbbf24" font-size="28" font-weight="700">12</text>
+  <text x="64" y="362" fill="#94a3b8" font-size="13">running pods (namespace boutique)</text>
+</svg>

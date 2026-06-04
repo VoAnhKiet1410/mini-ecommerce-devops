@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-04 (Phase 4 observability — code in repo) |
+| **Cập nhật** | 2026-06-04 (Phase 4 code pushed; E2E scripts added) |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
 | **Unpushed commits** | 2 (`61ac2bb`, `9f5c11b`) — Phase 2 CI |
@@ -11,7 +11,7 @@
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 | **Chat gần nhất** | [Phase 1 AWS + destroy](f845b16c-bfec-4f3c-977a-dae3998b07db) |
 
-**Resume nhanh:** Phase 3 ✅. Phase 4 **code** ✅ (CloudWatch module + Helm values/scripts) — cần `terraform apply` + `install-monitoring` trên cluster live để verify E2E.
+**Resume nhanh:** Phase 3 ✅. Phase 4 **code** ✅ trên `origin/main` (`5dc7c74`). E2E: `.\scripts\run-phase4-e2e.ps1 -ApplyInfra` (AWS đã destroy → cần bootstrap lại). Screenshot: `capture-grafana-screenshot.ps1` → `docs/assets/grafana-cluster-overview.png`.
 
 ---
 
@@ -130,14 +130,15 @@ Chứng minh được:
 | Argo CD sync `online-boutique` | ✅ Synced / Healthy |
 | ALB smoke HTTP 200 | ✅ `verify-phase3.ps1` PASS |
 
-### Phase 4 — Observability (code ~100%, E2E chưa verify)
+### Phase 4 — Observability (code ✅, E2E chưa chạy trên AWS)
 
 | Task | Trạng thái |
 |------|------------|
-| 4.1 `infra/modules/observability-cloudwatch` + wire `environments/aws` | ✅ |
+| 4.1 `infra/modules/observability-cloudwatch` + wire `environments/aws` | ✅ pushed |
 | 4.2 `observability/aws/helm-values`, dashboard JSON, `install-monitoring.*` | ✅ |
+| `verify-phase4.*`, `run-phase4-e2e.*`, `capture-grafana-screenshot.ps1` | ✅ |
 | Runbook `docs/runbooks/observability.md`, `aws-up` §8 | ✅ |
-| `terraform apply` + Console alarms + Helm Grafana | ❌ Cần stack AWS live |
+| `terraform apply` + `verify-phase4` PASS + PNG README | ❌ Chạy `run-phase4-e2e.ps1 -ApplyInfra` khi sẵn sàng chi phí AWS |
 
 ### Phase 5
 
