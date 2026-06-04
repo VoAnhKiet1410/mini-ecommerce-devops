@@ -37,3 +37,16 @@ output "alb_controller_role_arn" {
 output "external_secrets_role_arn" {
   value = module.iam_irsa.external_secrets_role_arn
 }
+
+output "cloudwatch_rds_alarm_names" {
+  description = "RDS CloudWatch alarms (Phase 4)"
+  value = [
+    module.observability_cloudwatch.rds_cpu_alarm_name,
+    module.observability_cloudwatch.rds_free_storage_alarm_name,
+  ]
+}
+
+output "cloudwatch_alb_alarm_names" {
+  description = "ALB target 5xx alarms (Phase 4); populated after LBC ingress + re-apply"
+  value       = module.observability_cloudwatch.alb_target_5xx_alarm_names
+}

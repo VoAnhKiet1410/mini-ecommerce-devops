@@ -14,6 +14,7 @@ AWS infrastructure for Mini E-commerce DevOps Platform (`ap-southeast-1`).
 | `modules/iam-github-oidc/` | GitHub Actions OIDC roles |
 | `modules/iam-irsa/` | IRSA for ALB controller and External Secrets |
 | `modules/secrets/` | Secrets Manager (RDS credentials) |
+| `modules/observability-cloudwatch/` | CloudWatch alarms for platform RDS |
 | `environments/aws/` | Root module wiring all modules |
 
 ## Agent skills

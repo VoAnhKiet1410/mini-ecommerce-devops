@@ -151,3 +151,24 @@ ALB=$(kubectl get ingress frontend-ingress -n boutique -o jsonpath='{.status.loa
 ## 7. Platform database
 
 RDS is provisioned as a **platform database**. Application pods use Redis/in-memory per upstream; ESO syncs RDS credentials for future use.
+
+## 8. Observability (Phase 4)
+
+CloudWatch RDS alarms are created by Terraform (`observability-cloudwatch` module). After Phase 3 is healthy:
+
+```powershell
+.\scripts\install-monitoring.ps1
+```
+
+```bash
+chmod +x scripts/install-monitoring.sh
+./scripts/install-monitoring.sh
+```
+
+Full steps: [observability.md](observability.md) (Grafana port-forward, dashboard import, `kubectl top`).
+
+After Phase 3 ingress has an ALB hostname, **re-run `terraform apply`** so ALB CloudWatch alarms are created, then:
+
+```powershell
+.\scripts\verify-phase4.ps1
+```

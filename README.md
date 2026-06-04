@@ -29,6 +29,12 @@ See [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md). **Run `terraform destroy
 
 GitHub Actions build happy-path images, scan with Trivy (SARIF for CRITICAL/HIGH; warn-only on `main`), and push to ECR via OIDC. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
 
+## Observability (Phase 4)
+
+CloudWatch RDS alarms (Terraform) and Prometheus/Grafana on EKS (`kube-prometheus-stack`). See [docs/runbooks/observability.md](docs/runbooks/observability.md).
+
+After install, run `.\scripts\verify-phase4.ps1`, port-forward Grafana, and import `observability/aws/dashboards/cluster-overview.json`. Re-run `terraform apply` after Phase 3 ingress so ALB alarms are created. Add a dashboard screenshot here for portfolio demos when ready.
+
 ## Platform database disclosure
 
 RDS/Compose PostgreSQL is provisioned as a **platform database**. Happy-path services use upstream storage (Redis, in-memory catalog) in Phase 1.
