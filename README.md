@@ -33,7 +33,13 @@ GitHub Actions build happy-path images, scan with Trivy (SARIF for CRITICAL/HIGH
 
 CloudWatch RDS alarms (Terraform) and Prometheus/Grafana on EKS (`kube-prometheus-stack`). See [docs/runbooks/observability.md](docs/runbooks/observability.md).
 
-After install, run `.\scripts\verify-phase4.ps1`, port-forward Grafana, and import `observability/aws/dashboards/cluster-overview.json`. Re-run `terraform apply` after Phase 3 ingress so ALB alarms are created. Add a dashboard screenshot here for portfolio demos when ready.
+After install, run `.\scripts\verify-phase4.ps1`, port-forward Grafana, and import `observability/aws/dashboards/cluster-overview.json`. Re-run `terraform apply` after Phase 3 ingress so ALB alarms are created.
+
+Full E2E (when AWS stack is up): `.\scripts\run-phase4-e2e.ps1` (add `-ApplyInfra` if the cluster was destroyed). Screenshot: `.\scripts\capture-grafana-screenshot.ps1` → saves below.
+
+![Grafana cluster overview — Online Boutique pods on EKS](docs/assets/grafana-cluster-overview.svg)
+
+*Live metrics screenshot:* run `.\scripts\capture-grafana-screenshot.ps1` → commits as `docs/assets/grafana-cluster-overview.png` (optional; replace SVG link above when ready).
 
 ## Platform database disclosure
 

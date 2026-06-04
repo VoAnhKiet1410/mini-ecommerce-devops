@@ -89,7 +89,21 @@ Import **Dashboards → Import → Upload JSON**:
 
 If panels show *No data*, map the dashboard datasource to your Prometheus instance (UID may differ from `prometheus` in the JSON).
 
-Optional: export an updated JSON after edits and commit; add a screenshot to `README.md` for portfolio demos.
+**README screenshot (automated):**
+
+```powershell
+.\scripts\capture-grafana-screenshot.ps1
+# writes docs/assets/grafana-cluster-overview.png (requires Playwright via npx, or save manually)
+```
+
+**Full Phase 4 E2E** (cluster already up, or `-ApplyInfra` to bootstrap + apply):
+
+```powershell
+.\scripts\run-phase4-e2e.ps1
+.\scripts\run-phase4-e2e.ps1 -ApplyInfra   # after terraform destroy / no EKS
+```
+
+Optional: export an updated JSON after edits and commit the PNG for portfolio demos.
 
 ## 4. Quick checks without Grafana
 
