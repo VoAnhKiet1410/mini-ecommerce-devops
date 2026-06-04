@@ -18,3 +18,7 @@ output "master_password" {
 output "database_name" {
   value = aws_db_instance.this.db_name
 }
+
+output "db_instance_identifier" {
+  value = aws_db_instance.this.identifier
+}

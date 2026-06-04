@@ -71,3 +71,11 @@ module "secrets" {
   dbname   = module.rds.database_name
   tags     = local.tags
 }
+
+module "observability_cloudwatch" {
+  source           = "../../modules/observability-cloudwatch"
+  name             = var.project_name
+  db_instance_id   = module.rds.db_instance_identifier
+  eks_cluster_name = module.eks.cluster_name
+  tags             = local.tags
+}

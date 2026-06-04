@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-03 (Phase 3 E2E pass on EKS) |
+| **Cập nhật** | 2026-06-04 (Phase 4 observability — code in repo) |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
 | **Unpushed commits** | 2 (`61ac2bb`, `9f5c11b`) — Phase 2 CI |
@@ -11,7 +11,7 @@
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 | **Chat gần nhất** | [Phase 1 AWS + destroy](f845b16c-bfec-4f3c-977a-dae3998b07db) |
 
-**Resume nhanh:** Phase 3 ✅ — Argo sync + ESO + ALB smoke 200 trên `m7i-flex.large`. Phase 4 observability tiếp theo.
+**Resume nhanh:** Phase 3 ✅. Phase 4 **code** ✅ (CloudWatch module + Helm values/scripts) — cần `terraform apply` + `install-monitoring` trên cluster live để verify E2E.
 
 ---
 
@@ -26,7 +26,7 @@ Chứng minh được:
 - IaC Terraform trong repo app  
 - CI/CD GitHub Actions (OIDC → ECR, plan trên PR, Trivy/Checkov)  
 - GitOps (repo thứ 2): Kustomize + Argo CD + ESO (chưa làm)  
-- Observability: Prometheus/Grafana/CloudWatch (chưa làm)  
+- Observability: Prometheus/Grafana/CloudWatch (**code** trong repo; E2E trên EKS chưa verify)  
 
 Đối tượng: solo builder, portfolio/CV tiếng Anh; **không** mục tiêu production 24/7.
 
@@ -130,9 +130,18 @@ Chứng minh được:
 | Argo CD sync `online-boutique` | ✅ Synced / Healthy |
 | ALB smoke HTTP 200 | ✅ `verify-phase3.ps1` PASS |
 
-### Phase 4–5
+### Phase 4 — Observability (code ~100%, E2E chưa verify)
 
-Chưa bắt đầu (observability, optional hardening).
+| Task | Trạng thái |
+|------|------------|
+| 4.1 `infra/modules/observability-cloudwatch` + wire `environments/aws` | ✅ |
+| 4.2 `observability/aws/helm-values`, dashboard JSON, `install-monitoring.*` | ✅ |
+| Runbook `docs/runbooks/observability.md`, `aws-up` §8 | ✅ |
+| `terraform apply` + Console alarms + Helm Grafana | ❌ Cần stack AWS live |
+
+### Phase 5
+
+Chưa bắt đầu (optional hardening).
 
 ---
 
@@ -230,7 +239,7 @@ Chưa bắt đầu (observability, optional hardening).
    - `.\scripts\install-aws-lbc.ps1` (Task 1.10)
    - Helm: ESO, Argo CD (`docs/runbooks/aws-up.md` §4–5)
 4. **Phase 3:** Kustomize base/overlays trong `mini-ecommerce-gitops`, Argo Application, ESO `ClusterSecretStore`.  
-5. **Phase 4:** Observability sau khi app chạy trên EKS.  
+5. **Phase 4 E2E:** `terraform apply` → `.\scripts\install-monitoring.ps1` → Grafana import + screenshot README — [observability.md](../runbooks/observability.md).  
 6. **`terraform destroy`** khi xong demo.
 
 **Skill Superpowers gợi ý:** `executing-plans` hoặc `subagent-driven-development` cho Phase 3; `verification-before-completion` trước khi báo xong Task 1.10/CI.
