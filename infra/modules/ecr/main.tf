@@ -10,7 +10,7 @@ terraform {
 
 resource "aws_ecr_repository" "this" {
   for_each             = toset(var.repository_names)
-  name                 = "mini-ecommerce/${each.key}"
+  name                 = "${var.repository_path_prefix}/${each.key}"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration {
     scan_on_push = true

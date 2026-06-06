@@ -45,12 +45,12 @@ resource "aws_security_group" "this" {
 resource "aws_db_instance" "this" {
   identifier              = var.name
   engine                  = "postgres"
-  engine_version          = "16"
-  instance_class          = "db.t4g.micro"
+  engine_version          = var.engine_version
+  instance_class          = var.instance_class
   allocated_storage       = 20
   storage_type            = "gp3"
   storage_encrypted       = true
-  backup_retention_period = 1
+  backup_retention_period = var.backup_retention_period
   deletion_protection     = false
   db_name                 = var.database_name
   username                = var.master_username

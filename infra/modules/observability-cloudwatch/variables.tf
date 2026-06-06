@@ -31,6 +31,12 @@ variable "alb_target_5xx_threshold" {
   description = "Alarm when sum of HTTPCode_Target_5XX_Count exceeds this count per 5-minute period"
 }
 
+variable "alarm_actions" {
+  type        = list(string)
+  default     = []
+  description = "SNS topic ARNs to notify when an alarm transitions to ALARM state (optional)"
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
