@@ -19,6 +19,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
   statistic           = "Average"
   threshold           = var.rds_cpu_threshold_percent
   treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
 
   dimensions = {
     DBInstanceIdentifier = var.db_instance_id
@@ -38,6 +39,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_free_storage" {
   statistic           = "Average"
   threshold           = var.rds_free_storage_threshold_gib * 1024 * 1024 * 1024
   treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
 
   dimensions = {
     DBInstanceIdentifier = var.db_instance_id
@@ -74,6 +76,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_5xx" {
   statistic           = "Sum"
   threshold           = var.alb_target_5xx_threshold
   treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
 
   dimensions = {
     LoadBalancer = each.value
