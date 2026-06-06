@@ -1,0 +1,55 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/frontend"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/productcatalogservice"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/cartservice/src"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "docker"
+    directory: "/src/checkoutservice"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+
+  - package-ecosystem: "npm"
+    directory: "/src/currencyservice"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "npm"]
+
+  - package-ecosystem: "npm"
+    directory: "/src/paymentservice"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "npm"]
+
+  - package-ecosystem: "terraform"
+    directory: "/infra/environments/aws"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "terraform"]
+
+  - package-ecosystem: "terraform"
+    directory: "/infra/bootstrap/state"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "terraform"]

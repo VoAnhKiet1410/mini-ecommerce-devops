@@ -12,11 +12,38 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: ci-build-push-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   AWS_REGION: ap-southeast-1
 
 jobs:
+  test-go:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: frontend
+            path: src/frontend
+          - name: productcatalogservice
+            path: src/productcatalogservice
+          - name: checkoutservice
+            path: src/checkoutservice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.service.path }}/go.mod
+          cache-dependency-path: ${{ matrix.service.path }}/go.sum
+      - name: Run unit tests
+        run: go test ./...
+        working-directory: ${{ matrix.service.path }}
+
   build-push:
+    needs: test-go
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -54,9 +81,21 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
 
-      # Phase 2: report CRITICAL/HIGH in SARIF; do not fail the job (spec O3 — tighten in Phase 5).
-      - name: Run Trivy vulnerability scanner
+      # Image is pushed before scanning so Trivy can pull it directly from ECR.
+      # Trade-off: a CRITICAL-vulnerable image is briefly in ECR before the gate
+      # fails and blocks the workflow. For production, scan a locally-loaded image
+      # before push (build with push:false → scan → re-push on pass).
+      - name: Trivy gate (fail on CRITICAL)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: "1"
+
+      - name: Run Trivy vulnerability scanner (SARIF report)
         uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}:${{ github.sha }}
@@ -66,6 +105,7 @@ jobs:
           exit-code: "0"
 
       - name: Upload Trivy report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-${{ matrix.service.name }}
