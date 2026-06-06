@@ -18,6 +18,7 @@ concurrency:
 
 env:
   AWS_REGION: ap-southeast-1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   test-go:

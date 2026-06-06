@@ -15,6 +15,7 @@ permissions:
 
 env:
   AWS_REGION: ap-southeast-1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   # GitHub forbids repository variables named GITHUB_* — use workflow context instead
   TF_VAR_github_org: ${{ github.repository_owner }}
   TF_VAR_github_repo: ${{ github.event.repository.name }}
