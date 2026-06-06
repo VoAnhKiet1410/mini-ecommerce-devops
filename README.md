@@ -27,7 +27,7 @@ See [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md). **Run `terraform destroy
 
 ## CI/CD (Phase 2)
 
-GitHub Actions build happy-path images, scan with Trivy (SARIF for CRITICAL/HIGH; warn-only on `main`), and push to ECR via OIDC. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
+GitHub Actions build happy-path images, scan with Trivy, and push to ECR via OIDC. **Phase 5:** builds fail on **CRITICAL** CVEs; **HIGH** is reported in SARIF artifacts only. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
 
 ## Observability (Phase 4)
 
@@ -40,6 +40,21 @@ Full E2E (when AWS stack is up): `.\scripts\run-phase4-e2e.ps1` (add `-ApplyInfr
 ![Grafana cluster overview — Online Boutique pods on EKS](docs/assets/grafana-cluster-overview.svg)
 
 *Live metrics screenshot:* run `.\scripts\capture-grafana-screenshot.ps1` → commits as `docs/assets/grafana-cluster-overview.png` (optional; replace SVG link above when ready).
+
+## Hardening (Phase 5)
+
+- **Trivy gate:** `main` CI fails on image **CRITICAL** vulnerabilities; **HIGH** remains visible in workflow artifacts.
+- **Checkov:** Terraform PRs run Checkov (baseline); scheduled `security-scan.yml` fails on CRITICAL in `infra/`.
+- **Optional (deferred):** Route 53 + ACM, product catalog on PostgreSQL — see [spec](docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md) §11.2.
+
+## Portfolio highlights (CV)
+
+- Provisioned **AWS EKS**, **ECR**, **RDS PostgreSQL**, and **ALB** using **Terraform** (`ap-southeast-1`), with ephemeral cost control via IaC lifecycle.
+- Implemented **GitHub Actions** CI with **OIDC** to build microservices, **Trivy** scanning, and push to **ECR**; **Checkov** on infrastructure PRs.
+- Deployed **Google microservices-demo** (happy path) via **Argo CD** GitOps (**Kustomize**, 2-repo model) with **External Secrets Operator** and **AWS Secrets Manager**.
+- Operated **Prometheus**, **Grafana**, and **CloudWatch** for demo observability on Kubernetes.
+
+**Recruiter demo:** [docs/runbooks/demo-checklist.md](docs/runbooks/demo-checklist.md)
 
 ## Platform database disclosure
 

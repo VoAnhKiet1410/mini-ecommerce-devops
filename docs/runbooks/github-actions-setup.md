@@ -37,7 +37,7 @@ terraform output -raw github_actions_terraform_plan_role_arn
 2. Push a change under `src/` or run **workflow_dispatch** on **CI Build and Push to ECR**.
 3. Confirm green run and images in ECR: `mini-ecommerce/<service>`.
 
-**Trivy (image scan):** `ci-build-push.yml` uploads SARIF for `CRITICAL,HIGH` with `exit-code: "0"` so base-image CVEs do not block ECR push (portfolio/demo policy; fail-on-CRITICAL is Phase 5). Download artifacts `trivy-<service>` from the workflow run to review findings.
+**Trivy (image scan):** `ci-build-push.yml` runs a **gate** step that fails the job on `CRITICAL` (`exit-code: "1"`). A second step uploads SARIF for `CRITICAL,HIGH` with `exit-code: "0"` so `HIGH` findings are visible but do not block ECR push. Download artifacts `trivy-<service>` from the workflow run to review findings.
 
 ## Image URIs (for Phase 3 GitOps)
 
