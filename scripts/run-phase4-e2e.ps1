@@ -4,11 +4,22 @@ param(
     [switch]$SkipBootstrap,
     [switch]$SkipPhase3,
     [switch]$SkipScreenshot,
-    [string]$GrafanaPassword = $(if ($env:GRAFANA_ADMIN_PASSWORD) { $env:GRAFANA_ADMIN_PASSWORD } else { "admin" })
+    [string]$GrafanaPassword
 )
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path $PSScriptRoot -Parent
+$DotEnv = Join-Path $RepoRoot ".env"
+if ((Test-Path $DotEnv) -and -not $env:GRAFANA_ADMIN_PASSWORD) {
+    Get-Content $DotEnv | ForEach-Object {
+        if ($_ -match '^\s*GRAFANA_ADMIN_PASSWORD\s*=\s*(.+)\s*$') {
+            $env:GRAFANA_ADMIN_PASSWORD = $matches[1].Trim().Trim('"').Trim("'")
+        }
+    }
+}
+if (-not $GrafanaPassword) {
+    $GrafanaPassword = if ($env:GRAFANA_ADMIN_PASSWORD) { $env:GRAFANA_ADMIN_PASSWORD } else { "admin" }
+}
 $BootstrapDir = Join-Path $RepoRoot "infra\bootstrap\state"
 $TfDir = Join-Path $RepoRoot "infra\environments\aws"
 $Region = if ($env:AWS_REGION) { $env:AWS_REGION } else { "ap-southeast-1" }

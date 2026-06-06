@@ -1,8 +1,16 @@
 # Phase 4 - Install kube-prometheus-stack (Prometheus + Grafana)
 $ErrorActionPreference = "Stop"
+$RepoRoot = Split-Path $PSScriptRoot -Parent
+$DotEnv = Join-Path $RepoRoot ".env"
+if ((Test-Path $DotEnv) -and -not $env:GRAFANA_ADMIN_PASSWORD) {
+    Get-Content $DotEnv | ForEach-Object {
+        if ($_ -match '^\s*GRAFANA_ADMIN_PASSWORD\s*=\s*(.+)\s*$') {
+            $env:GRAFANA_ADMIN_PASSWORD = $matches[1].Trim().Trim('"').Trim("'")
+        }
+    }
+}
 $Region = if ($env:AWS_REGION) { $env:AWS_REGION } else { "ap-southeast-1" }
 $ClusterName = if ($env:EKS_CLUSTER_NAME) { $env:EKS_CLUSTER_NAME } else { "mini-ecommerce-devops" }
-$RepoRoot = Split-Path $PSScriptRoot -Parent
 $ValuesFile = Join-Path $RepoRoot "observability\aws\helm-values\kube-prometheus-stack.yaml"
 $Namespace = "observability"
 $ReleaseName = "monitoring"

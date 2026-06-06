@@ -48,6 +48,27 @@ services:
       redis:
         condition: service_healthy
 
+  shippingservice:
+    build:
+      context: src/shippingservice
+    environment:
+      PORT: "50051"
+      DISABLE_PROFILER: "1"
+
+  paymentservice:
+    build:
+      context: src/paymentservice
+    environment:
+      PORT: "50051"
+      DISABLE_PROFILER: "1"
+
+  emailservice:
+    build:
+      context: src/emailservice
+    environment:
+      PORT: "8080"
+      DISABLE_PROFILER: "1"
+
   checkoutservice:
     build:
       context: src/checkoutservice
@@ -63,6 +84,9 @@ services:
       - productcatalogservice
       - cartservice
       - currencyservice
+      - shippingservice
+      - paymentservice
+      - emailservice
 
   frontend:
     build:
@@ -85,3 +109,4 @@ services:
       - cartservice
       - currencyservice
       - checkoutservice
+      - shippingservice
