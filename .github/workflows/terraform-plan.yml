@@ -34,7 +34,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_TERRAFORM_PLAN_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.5.7
 
