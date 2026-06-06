@@ -69,7 +69,7 @@ flowchart TB
 | `cartservice` | Cart API | **Redis** |
 | `checkoutservice` | Order orchestration | Calls other services |
 
-**Local Compose note:** Upstream `frontend` and `checkoutservice` require gRPC env addresses for additional demo services at process startup. Compose includes `currencyservice` so the home page and smoke test succeed; payment/shipping/email are not deployed locally—place-order may fail while browse/cart works.
+**Local Compose note:** Compose runs happy-path services plus `currencyservice`, `shippingservice`, `paymentservice`, and `emailservice` so browse, cart (shipping quote), and checkout work locally. Optional demo services (`adservice`, `recommendationservice`, …) are still omitted.
 
 ### Excluded from Phase 1 deploy scope
 
@@ -104,6 +104,7 @@ Images: CI builds from vendored `src/` → ECR; GitOps manifests reference ECR t
 
 ## Related docs
 
+- [blog/kien-truc-mini-ecommerce-devops.md](blog/kien-truc-mini-ecommerce-devops.md) — bài blog kiến trúc (tiếng Việt)
 - [aws-up.md](runbooks/aws-up.md) — bring-up sequence
 - [aws-down.md](runbooks/aws-down.md) — teardown
 - [demo-checklist.md](runbooks/demo-checklist.md) — recruiter demo script

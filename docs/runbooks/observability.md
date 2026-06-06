@@ -48,6 +48,10 @@ Resource limits are tuned for a single **`m7i-flex.large`** node — see `observ
 **Do not commit a real Grafana admin password.** Set at install time:
 
 ```powershell
+# Option A: set in repo root .env (gitignored): GRAFANA_ADMIN_PASSWORD=your-lab-password
+.\scripts\install-monitoring.ps1
+
+# Option B: one-off for this session
 $env:GRAFANA_ADMIN_PASSWORD = "your-lab-password"
 .\scripts\install-monitoring.ps1
 ```

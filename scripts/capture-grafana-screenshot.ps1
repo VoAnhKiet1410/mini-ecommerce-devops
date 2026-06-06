@@ -7,6 +7,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path $PSScriptRoot -Parent
+$DotEnv = Join-Path $RepoRoot ".env"
+if ((Test-Path $DotEnv) -and -not $env:GRAFANA_ADMIN_PASSWORD) {
+    Get-Content $DotEnv | ForEach-Object {
+        if ($_ -match '^\s*GRAFANA_ADMIN_PASSWORD\s*=\s*(.+)\s*$') {
+            $env:GRAFANA_ADMIN_PASSWORD = $matches[1].Trim().Trim('"').Trim("'")
+        }
+    }
+}
 $DashboardJson = Join-Path $RepoRoot "observability\aws\dashboards\cluster-overview.json"
 $OutDir = Join-Path $RepoRoot "docs\assets"
 $OutFile = Join-Path $OutDir "grafana-cluster-overview.png"
