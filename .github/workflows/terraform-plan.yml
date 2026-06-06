@@ -58,7 +58,7 @@ jobs:
           baseline: infra/.checkov.baseline
           soft_fail: true
 
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         if: github.event_name == 'pull_request' && always()
         env:
           PLAN_OUTCOME: ${{ steps.plan.outcome }}
