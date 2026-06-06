@@ -142,7 +142,13 @@ Chứng minh được:
 
 ### Phase 5
 
-Chưa bắt đầu (optional hardening).
+| Task | Trạng thái |
+|------|------------|
+| 5.1 Trivy fail on CRITICAL (`ci-build-push.yml`) | ✅ local |
+| 5.2 Route 53 + ACM | ⏭ optional — skipped |
+| 5.3 productcatalog → PostgreSQL | ⏭ optional — skipped |
+| F.1 README CV bullets + `demo-checklist.md` | ✅ local |
+| Full teardown test on AWS | ❌ chạy thủ công khi có stack |
 
 ---
 
