@@ -36,14 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy FS scan — infra (Terraform/IaC)
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: infra
           severity: CRITICAL
           exit-code: "1"
       - name: Trivy FS scan — src (Dockerfiles + dependencies)
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: src
