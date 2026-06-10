@@ -5,11 +5,14 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
+tfplan
+*.tfplan
 !backend.hcl.example
 backend.hcl
 !*.tfvars.example
 .idea/
 .vscode/
+.agents/
 __pycache__/
 .DS_Store
 .worktrees/
