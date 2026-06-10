@@ -75,29 +75,20 @@ try {
     $encPass = [uri]::EscapeDataString($GrafanaPassword)
     $dashUrl = "http://admin:${encPass}@127.0.0.1:${LocalPort}/d/${uid}"
 
-    # Get a Grafana session cookie via API login — avoids browser-based login redirect
-    # which tends to drop the kubectl port-forward TCP connection.
-    $loginJson = "{`"user`":`"admin`",`"password`":`"$($GrafanaPassword -replace '"','\"')`"}"
-    $tmpLogin = Join-Path $env:TEMP "grafana-login-$([System.Guid]::NewGuid().ToString('N')).json"
-    $tmpCookie = Join-Path $env:TEMP "grafana-cookie-$([System.Guid]::NewGuid().ToString('N')).txt"
-    [System.IO.File]::WriteAllText($tmpLogin, $loginJson, [System.Text.UTF8Encoding]::new($false))
-    try {
-        $loginResp = curl.exe -sf -c $tmpCookie -X POST "$base/api/login" `
+    # Create a short-lived service account token (Grafana 10+ compatible).
+    # /api/login cookie approach was removed; service account tokens work reliably.
+    $saResp = curl.exe -sf -u "admin:${GrafanaPassword}" -X POST "$base/api/serviceaccounts" `
+        -H "Content-Type: application/json" `
+        -d '{"name":"screenshot-bot-tmp","role":"Viewer"}' 2>&1
+    $saId = if ($saResp -match '"id":(\d+)') { $matches[1] } else { "" }
+    $grafanaToken = ""
+    if ($saId) {
+        $tokResp = curl.exe -sf -u "admin:${GrafanaPassword}" -X POST "$base/api/serviceaccounts/${saId}/tokens" `
             -H "Content-Type: application/json" `
-            --data-binary "@$tmpLogin" 2>&1
-        if ($LASTEXITCODE -ne 0) { Write-Warning "Grafana API login failed: $loginResp" }
-    } finally {
-        Remove-Item $tmpLogin -Force -ErrorAction SilentlyContinue
+            -d '{"name":"shot-token"}' 2>&1
+        if ($tokResp -match '"key":"([^"]+)"') { $grafanaToken = $matches[1] }
     }
-    # Extract grafana_session value from cookie jar (curl Netscape format: tab-separated)
-    $sessionValue = ""
-    if (Test-Path $tmpCookie) {
-        $lines = Get-Content $tmpCookie
-        $line  = $lines | Where-Object { $_ -match "grafana_session" } | Select-Object -Last 1
-        if ($line) { $sessionValue = ($line -split "`t")[-1].Trim() }
-        Remove-Item $tmpCookie -Force -ErrorAction SilentlyContinue
-    }
-    if (-not $sessionValue) { Write-Warning "Could not extract grafana_session cookie; will try unauthenticated" }
+    if (-not $grafanaToken) { Write-Warning "Could not create service account token; screenshot may be blank" }
 
     if (Get-Command npx -ErrorAction SilentlyContinue) {
         # Install playwright in an isolated temp dir so the project root stays clean.
@@ -106,33 +97,27 @@ try {
         $shotScript = Join-Path $pwDir "shot.mjs"
         @"
 import { chromium } from 'playwright';
-const base = process.env.GRAFANA_BASE;
-const user = process.env.GRAFANA_USER;
-const pass = process.env.GRAFANA_PASS;
-const uid  = process.env.GRAFANA_UID;
-const out  = process.env.GRAFANA_OUT;
-const basicAuth = 'Basic ' + Buffer.from(user + ':' + pass).toString('base64');
+const base  = process.env.GRAFANA_BASE;
+const token = process.env.GRAFANA_TOKEN;
+const uid   = process.env.GRAFANA_UID;
+const out   = process.env.GRAFANA_OUT;
 const browser = await chromium.launch();
-const ctx = await browser.newContext({
-  viewport: { width: 1400, height: 900 },
-  extraHTTPHeaders: { 'Authorization': basicAuth }
-});
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
 const page = await ctx.newPage();
-await page.goto(base + '/d/' + uid, { waitUntil: 'domcontentloaded', timeout: 60000 });
-await page.waitForTimeout(8000);
-// Debug: log title and URL before any manipulation.
+// auth_token in URL causes Grafana to set a session cookie, enabling SPA AJAX calls.
+// kiosk=tv hides nav/toolbar for a clean dashboard screenshot.
+const dashUrl = base + '/d/' + uid + '?auth_token=' + token + '&from=now-1h&to=now&kiosk=tv';
+await page.goto(dashUrl, { waitUntil: 'networkidle', timeout: 60000 });
+await page.waitForTimeout(10000);
 const title = await page.title();
-const url   = page.url();
-console.error('page title:', title, 'url:', url);
-// Hide only the dialog (not the backdrop) with display:none.
-// Avoid touching [class*="Backdrop"] which can match Grafana layout containers.
+console.error('page title:', title, 'url:', page.url());
 const hidden = await page.evaluate(() => {
   const dialogs = document.querySelectorAll('[role="dialog"]');
   dialogs.forEach(el => { el.style.display = 'none'; });
   return dialogs.length;
 });
 console.error('dialogs hidden:', hidden);
-await page.waitForTimeout(3000);
+await page.waitForTimeout(2000);
 await page.screenshot({ path: out, fullPage: false });
 await browser.close();
 "@ | Set-Content -Path $shotScript -Encoding UTF8
@@ -143,11 +128,10 @@ await browser.close();
                 npm install playwright --save 2>&1 | Out-Null
                 npx playwright install chromium 2>&1 | Out-Null
             }
-            $env:GRAFANA_BASE = "http://127.0.0.1:${LocalPort}"
-            $env:GRAFANA_USER = "admin"
-            $env:GRAFANA_PASS = $GrafanaPassword
-            $env:GRAFANA_UID  = $uid
-            $env:GRAFANA_OUT  = $OutFile
+            $env:GRAFANA_BASE  = "http://127.0.0.1:${LocalPort}"
+            $env:GRAFANA_TOKEN = $grafanaToken
+            $env:GRAFANA_UID   = $uid
+            $env:GRAFANA_OUT   = $OutFile
             node $shotScript
         } finally {
             Pop-Location
