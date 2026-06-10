@@ -43,8 +43,27 @@ jobs:
         run: go test ./...
         working-directory: ${{ matrix.service.path }}
 
+  # Determines whether AWS secrets are configured. build-push is skipped (not
+  # failed) when the stack is torn down, keeping the overall workflow green.
+  check-aws-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.probe.outputs.available }}
+    steps:
+      - id: probe
+        env:
+          ECR_ROLE: ${{ secrets.AWS_ECR_ROLE_ARN }}
+        run: |
+          if [ -n "$ECR_ROLE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "AWS_ECR_ROLE_ARN not set — ECR push skipped (AWS stack is down)"
+          fi
+
   build-push:
-    needs: test-go
+    needs: [test-go, check-aws-secrets]
+    if: needs.check-aws-secrets.outputs.available == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

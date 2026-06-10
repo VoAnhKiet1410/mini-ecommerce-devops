@@ -38,7 +38,7 @@ function Test-CloudWatchAlarmExists {
 
 aws eks update-kubeconfig --region $Region --name $ClusterName | Out-Null
 
-Write-Host "=== CloudWatch — RDS alarms ==="
+Write-Host "=== CloudWatch - RDS alarms ==="
 $rdsAlarms = @(Get-TerraformOutputJson "cloudwatch_rds_alarm_names")
 if ($rdsAlarms.Count -lt 2) {
     Write-Error "Expected 2 RDS alarm names from terraform output cloudwatch_rds_alarm_names"
@@ -47,7 +47,7 @@ foreach ($name in $rdsAlarms) {
     Test-CloudWatchAlarmExists -AlarmName $name
 }
 
-Write-Host "`n=== CloudWatch — ALB alarms ==="
+Write-Host "`n=== CloudWatch - ALB alarms ==="
 $albAlarms = @(Get-TerraformOutputJson "cloudwatch_alb_alarm_names")
 $ingressHost = kubectl get ingress frontend-ingress -n boutique -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
 
@@ -60,7 +60,7 @@ Re-run from infra/environments/aws after Phase 3 ingress is healthy:
   terraform apply tfplan
 "@
     } else {
-        Write-Host "  (no ALB ingress yet — skip ALB alarm check)"
+        Write-Host "  (no ALB ingress yet - skip ALB alarm check)"
     }
 } else {
     foreach ($name in $albAlarms) {
