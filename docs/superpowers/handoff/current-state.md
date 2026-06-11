@@ -5,11 +5,11 @@
 | **Cập nhật** | 2026-06-11 |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
-| **Working tree** | **Có thay đổi chưa commit** — Tier 1 CI upgrade (xem §4a) |
+| **Working tree** | **Sạch** — Tier 1 CI upgrade đã commit `144f64e` (2026-06-11) |
 | **AWS runtime** | **DOWN** — `terraform destroy` hoàn tất 2026-06-10; cần bootstrap lại trước khi demo |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 
-**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — code local chưa commit, E2E chờ lần bring-up AWS tiếp theo.
+**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — đã commit `144f64e`, chưa push, E2E chờ lần bring-up AWS tiếp theo.
 
 ---
 
@@ -57,7 +57,7 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 | `.gitignore` fix — tfplan + .agents/ | ✅ |
 | `dependabot.yml` mở rộng — gomod (4 Go services) + pip (emailservice) | ✅ |
 
-### 4a. Tier 1 CI upgrade (2026-06-11) — CHƯA COMMIT
+### 4a. Tier 1 CI upgrade (2026-06-11) — commit `144f64e`, chưa push
 
 | File | Thay đổi |
 |------|----------|
@@ -90,7 +90,7 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 ## 6. Task còn lại
 
-**Tier 1 CI upgrade (2026-06-11):** code local chưa commit — cần commit + verify E2E khi bring-up AWS tiếp theo:
+**Tier 1 CI upgrade (2026-06-11):** đã commit `144f64e`, chưa push — cần verify E2E khi bring-up AWS tiếp theo:
 
 | # | Verify | Cần gì |
 |---|--------|--------|
