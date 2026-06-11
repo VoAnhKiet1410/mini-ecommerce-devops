@@ -29,6 +29,10 @@ See [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md). **Run `terraform destroy
 
 GitHub Actions build happy-path images, scan with Trivy, and push to ECR via OIDC. **Phase 5:** builds fail on **CRITICAL** CVEs; **HIGH** is reported in SARIF artifacts only. See [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md).
 
+- **Supply chain:** images that pass the Trivy gate are signed with **cosign keyless** (GitHub OIDC) and carry a **syft SPDX SBOM** attestation — verify with `scripts/verify-image-signature.*` ([docs/runbooks/supply-chain.md](docs/runbooks/supply-chain.md)).
+- **Closed GitOps loop:** after a green build on `main`, CI opens an image-bump PR against `mini-ecommerce-gitops` (Kustomize tags pinned to the commit SHA); Argo CD deploys after review + merge.
+- **Cost awareness:** Terraform PRs get an **Infracost** sticky comment with the monthly cost diff.
+
 ## Observability (Phase 4)
 
 CloudWatch RDS alarms (Terraform) and Prometheus/Grafana on EKS (`kube-prometheus-stack`). See [docs/runbooks/observability.md](docs/runbooks/observability.md).
@@ -45,13 +49,16 @@ Full E2E (when AWS stack is up): `.\scripts\run-phase4-e2e.ps1` (add `-ApplyInfr
 
 - **Trivy gate:** `main` CI fails on image **CRITICAL** vulnerabilities; **HIGH** remains visible in workflow artifacts.
 - **Checkov:** Terraform PRs run Checkov (baseline); scheduled `security-scan.yml` fails on CRITICAL in `infra/`.
+- **Image signing + SBOM:** cosign keyless signatures and SPDX SBOM attestations on every pushed image ([docs/runbooks/supply-chain.md](docs/runbooks/supply-chain.md)).
 - **Optional (deferred):** Route 53 + ACM, product catalog on PostgreSQL — see [spec](docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md) §11.2.
 
 ## Portfolio highlights (CV)
 
 - Provisioned **AWS EKS**, **ECR**, **RDS PostgreSQL**, and **ALB** using **Terraform** (`ap-southeast-1`), with ephemeral cost control via IaC lifecycle.
 - Implemented **GitHub Actions** CI with **OIDC** to build microservices, **Trivy** scanning, and push to **ECR**; **Checkov** on infrastructure PRs.
-- Deployed **Google microservices-demo** (happy path) via **Argo CD** GitOps (**Kustomize**, 2-repo model) with **External Secrets Operator** and **AWS Secrets Manager**.
+- Secured the software supply chain with **cosign keyless signing** (Sigstore) and **syft SBOM** attestations on container images, verified against GitHub OIDC identity.
+- Closed the **GitOps loop**: CI automatically opens Kustomize image-bump PRs to the gitops repo; **Argo CD** deploys after human review (2-repo model, **External Secrets Operator**, **AWS Secrets Manager**).
+- Added **FinOps guardrails**: **Infracost** cost-diff comments on every infrastructure PR.
 - Operated **Prometheus**, **Grafana**, and **CloudWatch** for demo observability on Kubernetes.
 
 **Recruiter demo:** [docs/runbooks/demo-checklist.md](docs/runbooks/demo-checklist.md)

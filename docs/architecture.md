@@ -43,7 +43,8 @@ flowchart TB
   AppRepo --> GHA
   GHA -->|OIDC push| ECR
   GHA -->|plan on PR| AppRepo
-  GHA -->|build/push images| ECR
+  GHA -->|"build/push + cosign sign + SBOM"| ECR
+  GHA -->|"image-bump PR (kustomize)"| GitOpsRepo
   GitOpsRepo --> Argo
   Argo --> Apps
   TFLocal --> EKS
@@ -91,7 +92,7 @@ RDS and Compose PostgreSQL are **platform databases**: provisioned and documente
 | `mini-ecommerce-devops` (app) | `src/`, `infra/`, `docker-compose.yml`, CI workflows, runbooks |
 | `mini-ecommerce-gitops` | Kustomize `base/` + `overlays/aws/`, Argo CD Applications |
 
-Images: CI builds from vendored `src/` → ECR; GitOps manifests reference ECR tags; Argo CD syncs overlay `aws`.
+Images: CI builds from vendored `src/` → ECR (signed with cosign, SBOM attested); CI then opens an image-bump PR on `mini-ecommerce-gitops` pinning Kustomize tags to the commit SHA; after review + merge, Argo CD syncs overlay `aws`.
 
 ## Design decisions
 
@@ -108,4 +109,5 @@ Images: CI builds from vendored `src/` → ECR; GitOps manifests reference ECR t
 - [aws-up.md](runbooks/aws-up.md) — bring-up sequence
 - [aws-down.md](runbooks/aws-down.md) — teardown
 - [demo-checklist.md](runbooks/demo-checklist.md) — recruiter demo script
+- [supply-chain.md](runbooks/supply-chain.md) — cosign signing, SBOM, verification
 - Spec: [docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md](superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md)

@@ -103,3 +103,61 @@ jobs:
       - name: Fail if Terraform plan failed
         if: steps.plan.outcome == 'failure'
         run: exit 1
+
+  # Cost estimate comment on the PR. Parses HCL only (no AWS credentials, no
+  # terraform init). Skipped gracefully when INFRACOST_API_KEY is not set so
+  # the workflow stays green for forks / before the secret is configured.
+  infracost:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_github_org: ${{ github.repository_owner }}
+      TF_VAR_github_repo: ${{ github.event.repository.name }}
+    steps:
+      - id: probe
+        env:
+          INFRACOST_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          if [ -n "$INFRACOST_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "INFRACOST_API_KEY not set — cost estimate skipped"
+          fi
+
+      - name: Setup Infracost
+        if: steps.probe.outputs.available == 'true'
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Checkout base branch
+        if: steps.probe.outputs.available == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Infracost baseline (base branch)
+        if: steps.probe.outputs.available == 'true'
+        run: |
+          infracost breakdown --path=infra/environments/aws \
+            --format=json --out-file=/tmp/infracost-base.json
+
+      - name: Checkout PR branch
+        if: steps.probe.outputs.available == 'true'
+        uses: actions/checkout@v6
+
+      - name: Infracost diff
+        if: steps.probe.outputs.available == 'true'
+        run: |
+          infracost diff --path=infra/environments/aws \
+            --compare-to=/tmp/infracost-base.json \
+            --format=json --out-file=/tmp/infracost.json
+
+      - name: Post Infracost comment (sticky)
+        if: steps.probe.outputs.available == 'true'
+        run: |
+          infracost comment github --path=/tmp/infracost.json \
+            --repo="$GITHUB_REPOSITORY" \
+            --github-token="${{ github.token }}" \
+            --pull-request="${{ github.event.pull_request.number }}" \
+            --behavior=update
