@@ -2,14 +2,14 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-10 |
+| **Cập nhật** | 2026-06-11 |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
-| **Working tree** | Sạch — chỉ `.cursor/` untracked (gitignored) |
+| **Working tree** | **Có thay đổi chưa commit** — Tier 1 CI upgrade (xem §4a) |
 | **AWS runtime** | **DOWN** — `terraform destroy` hoàn tất 2026-06-10; cần bootstrap lại trước khi demo |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 
-**Resume nhanh:** Dự án **hoàn chỉnh**. Tất cả phase đã verify E2E trên AWS. CI green. Grafana screenshot đã commit. AWS đã destroy. Chỉ cần bootstrap lại khi demo tiếp.
+**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — code local chưa commit, E2E chờ lần bring-up AWS tiếp theo.
 
 ---
 
@@ -57,6 +57,21 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 | `.gitignore` fix — tfplan + .agents/ | ✅ |
 | `dependabot.yml` mở rộng — gomod (4 Go services) + pip (emailservice) | ✅ |
 
+### 4a. Tier 1 CI upgrade (2026-06-11) — CHƯA COMMIT
+
+| File | Thay đổi |
+|------|----------|
+| `.github/workflows/terraform-plan.yml` | Job `infracost`: breakdown base → diff → sticky PR comment; skip graceful nếu thiếu `INFRACOST_API_KEY` |
+| `.github/workflows/ci-build-push.yml` | (1) cosign keyless sign + syft SBOM + attest sau Trivy gate; (2) job `update-gitops` mở PR sang `mini-ecommerce-gitops` bump tag SHA qua `kustomize edit set image`; skip graceful nếu thiếu `GITOPS_REPO_TOKEN` |
+| `scripts/verify-image-signature.ps1` / `.sh` | Demo `cosign verify` + `verify-attestation` với certificate identity của repo |
+| `docs/runbooks/supply-chain.md` | Runbook mới: flow build → scan → sign → attest → verify |
+| `docs/runbooks/github-actions-setup.md` | 2 secrets mới (`INFRACOST_API_KEY`, `GITOPS_REPO_TOKEN`) + hướng dẫn setup |
+| `README.md`, `docs/architecture.md` | CV bullets + diagram cập nhật |
+
+**Secrets mới cần tạo (manual):** `INFRACOST_API_KEY` (free, infracost.io), `GITOPS_REPO_TOKEN` (fine-grained PAT, chỉ repo gitops, Contents + Pull requests RW).
+
+**Yêu cầu phía repo gitops:** manifests `base/` phải reference image bằng tên ECR đầy đủ để `images:` transformer trong `overlays/aws/kustomization.yaml` match.
+
 ---
 
 ## 5. Lỗi đã fix (2026-06-10, session này)
@@ -75,12 +90,15 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 ## 6. Task còn lại
 
-**Không có.** Dự án hoàn chỉnh cho mục tiêu portfolio.
+**Tier 1 CI upgrade (2026-06-11):** code local chưa commit — cần commit + verify E2E khi bring-up AWS tiếp theo:
 
-Có thể mở rộng sau nếu muốn:
-- Route 53 custom domain + ACM TLS
-- HPA / cluster autoscaler
-- Cost optimization (Spot instances)
+| # | Verify | Cần gì |
+|---|--------|--------|
+| **D** | Infracost sticky comment trên PR `infra/**` | Secret `INFRACOST_API_KEY` |
+| **E** | CI mở PR image-bump trên `mini-ecommerce-gitops` | Secret `GITOPS_REPO_TOKEN` + manifests `base/` dùng tên ECR đầy đủ |
+| **F** | cosign sign + SBOM attest + `verify-image-signature.*` PASS | AWS stack up, CI green, cosign cài local |
+
+Mở rộng sau (optional): Route 53 + ACM, HPA, Spot instances, Kyverno verifyImages.
 
 ---
 
@@ -105,10 +123,15 @@ aws eks update-kubeconfig --region ap-southeast-1 --name mini-ecommerce-devops
 # AWS_ECR_ROLE_ARN = terraform output -raw github_actions_ecr_role_arn
 # AWS_TERRAFORM_PLAN_ROLE_ARN = terraform output -raw github_actions_terraform_plan_role_arn
 # AWS_TF_STATE_BUCKET = voanhkiet1410-mini-ecommerce-tfstate-962765735385
+# INFRACOST_API_KEY = infracost auth login (optional — cost comment on infra PRs)
+# GITOPS_REPO_TOKEN = fine-grained PAT cho mini-ecommerce-gitops (optional — auto image-bump PR)
 # → xem docs/runbooks/github-actions-setup.md
 
 # 5. Trigger CI (push bất kỳ src/** change, hoặc workflow_dispatch)
-# → kiểm tra Actions tab — build-push PASS, ECR có image
+# → build-push PASS, ECR có image
+# → artifacts: sbom-<service>.spdx.json, trivy-<service>
+# → update-gitops job mở PR trên mini-ecommerce-gitops (nếu GITOPS_REPO_TOKEN set)
+# → verify signature: .\scripts\verify-image-signature.ps1 -Tag <git-sha>
 
 # 6. Phase 4 E2E (monitoring + verify)
 $env:GRAFANA_ADMIN_PASSWORD = "your-lab-password"

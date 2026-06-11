@@ -94,6 +94,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.service.context }}
@@ -130,3 +131,112 @@ jobs:
         with:
           name: trivy-${{ matrix.service.name }}
           path: trivy-${{ matrix.service.name }}.sarif
+
+      # Supply-chain steps run only after the Trivy gate passed, so only
+      # images that cleared the CRITICAL gate get signed.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Login cosign to ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" | \
+            cosign login --username AWS --password-stdin "$REGISTRY"
+
+      - name: Generate SBOM (syft, SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service.name }}.spdx.json
+          upload-artifact: true
+          artifact-name: sbom-${{ matrix.service.name }}.spdx.json
+
+      - name: Sign image (cosign keyless via GitHub OIDC)
+        env:
+          IMAGE: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
+
+      - name: Attach SBOM attestation (cosign attest)
+        env:
+          IMAGE: ${{ steps.login-ecr.outputs.registry }}/mini-ecommerce/${{ matrix.service.name }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign attest --yes --type spdxjson \
+            --predicate "sbom-${{ matrix.service.name }}.spdx.json" \
+            "$IMAGE"
+
+  # Closes the GitOps loop: opens a PR against the gitops repo bumping the
+  # Kustomize image tags to this commit's SHA. Argo CD picks the change up
+  # after the PR is reviewed and merged (human gate stays in place).
+  # Skipped gracefully when GITOPS_REPO_TOKEN is not set.
+  update-gitops:
+    needs: [build-push, check-aws-secrets]
+    if: needs.check-aws-secrets.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - id: probe
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          ECR_ROLE: ${{ secrets.AWS_ECR_ROLE_ARN }}
+        run: |
+          if [ -n "$GITOPS_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "GITOPS_REPO_TOKEN not set — gitops PR skipped"
+          fi
+          # ECR registry hostname derived from the role ARN (not secret —
+          # it is public in the gitops manifests anyway).
+          ACCOUNT_ID=$(echo "$ECR_ROLE" | cut -d: -f5)
+          echo "registry=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout gitops repo
+        if: steps.probe.outputs.available == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository_owner }}/mini-ecommerce-gitops
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+          path: gitops
+
+      - name: Install kustomize
+        if: steps.probe.outputs.available == 'true'
+        run: |
+          curl -sLo kustomize.tar.gz \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz"
+          tar -xzf kustomize.tar.gz kustomize
+          sudo mv kustomize /usr/local/bin/kustomize
+
+      - name: Bump image tags in overlays/aws
+        if: steps.probe.outputs.available == 'true'
+        working-directory: gitops/apps/online-boutique/overlays/aws
+        env:
+          REGISTRY: ${{ steps.probe.outputs.registry }}
+        run: |
+          for svc in frontend productcatalogservice cartservice checkoutservice; do
+            kustomize edit set image \
+              "${svc}=${REGISTRY}/mini-ecommerce/${svc}:${GITHUB_SHA}"
+          done
+          git diff --stat
+
+      - name: Open PR on gitops repo
+        if: steps.probe.outputs.available == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+          path: gitops
+          branch: ci/image-${{ github.sha }}
+          commit-message: "ci: bump images to ${{ github.sha }}"
+          title: "ci: bump happy-path images to ${{ github.sha }}"
+          body: |
+            Automated image bump from CI run [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+
+            | Service | New tag |
+            |---------|---------|
+            | frontend | `${{ github.sha }}` |
+            | productcatalogservice | `${{ github.sha }}` |
+            | cartservice | `${{ github.sha }}` |
+            | checkoutservice | `${{ github.sha }}` |
+
+            Source commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          delete-branch: true
