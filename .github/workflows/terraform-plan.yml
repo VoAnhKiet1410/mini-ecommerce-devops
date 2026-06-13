@@ -126,7 +126,7 @@ jobs:
 
       - name: Setup Infracost
         if: steps.probe.outputs.available == 'true'
-        uses: infracost/actions/setup@v3
+        uses: infracost/actions/setup@v4
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
