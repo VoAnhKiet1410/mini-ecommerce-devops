@@ -1,0 +1,55 @@
+# Kyverno ClusterPolicy — enforce cosign image signatures in the boutique namespace.
+#
+# Prerequisites:
+#   1. Kyverno installed (scripts/install-kyverno.ps1 / .sh)
+#   2. ECR images signed by ci-build-push.yml (cosign keyless, GitHub OIDC)
+#   3. Kyverno can reach ECR — either via an image-pull secret (see install script)
+#      or via IRSA (next hardening step).
+#
+# Update ACCOUNT_ID placeholder before applying if you fork this repo:
+#   sed -i 's/962765735385/<your-account-id>/g' infra/kyverno/boutique-verify-images.yaml
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-boutique-images
+  annotations:
+    policies.kyverno.io/title: Verify Boutique Image Signatures
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Rejects any Pod in the boutique namespace whose image was not signed by
+      the mini-ecommerce-devops GitHub Actions CI pipeline via cosign keyless
+      (Sigstore Fulcio/Rekor). Only images that passed the Trivy CRITICAL gate
+      receive a valid signature, so admission also indirectly enforces the scan
+      gate at deploy time.
+spec:
+  # Enforce = block non-compliant Pods at admission.
+  # Change to Audit first if you want to see violations without blocking.
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-cosign-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - boutique
+      verifyImages:
+        - imageReferences:
+            - "962765735385.dkr.ecr.ap-southeast-1.amazonaws.com/mini-ecommerce/*"
+          # Keep the tag as-is; do not mutate to digest automatically.
+          mutateDigest: false
+          verifyDigest: false
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    # Subject must match the exact workflow path + branch that signed the image.
+                    subject: "https://github.com/VoAnhKiet1410/mini-ecommerce-devops/.github/workflows/ci-build-push.yml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev

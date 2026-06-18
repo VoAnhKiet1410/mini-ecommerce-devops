@@ -32,6 +32,16 @@ Follow this order (matches portfolio success criteria):
 - `terraform plan` on PR; apply manual only.
 - Trivy fails on **CRITICAL**; **HIGH** reported in SARIF artifacts.
 
+## Known limitations (be ready to explain)
+
+| Topic | Reality | What to say |
+|-------|---------|-------------|
+| **Checkout on EKS** | Only 4 services on cluster (`frontend`, `productcatalog`, `cartservice`, `checkoutservice` + Redis). `currencyservice`, `shippingservice`, `paymentservice`, `emailservice` are Compose-only. | "Browse + add to cart works on EKS. Full checkout (place order) works locally in Compose where all dependencies are present. EKS scope is deliberately narrow to focus on the DevOps platform." |
+| **RDS not used by the app** | RDS is provisioned as a platform DB. Pods still use Redis/in-memory per upstream semantics (Approach A). | "RDS is provisioned, encrypted, credentials synced via ESO — I demonstrated the full secret pipeline. Migrating catalog to Postgres is the next optional phase." |
+| **No HTTPS** | ALB serves HTTP. Route 53 + ACM was deferred. | "Ephemeral stack — buying a domain just for a demo isn't justified. ACM + Ingress annotation would be a one-afternoon addition if needed." |
+| **cosign sign, not yet enforce** | Images are signed by CI; the cluster does **not** yet reject unsigned images (Kyverno `verifyImages` available but optional). | "Supply chain: sign in CI, verify locally. Cluster-side enforcement with Kyverno is set up in `infra/kyverno/`; apply when the policy is approved." |
+| **Tier 1 CI (Infracost, GitOps auto-PR)** | Code committed but E2E verify pending (needs live AWS + GitHub secrets push). | "Features are code-complete and skip gracefully when secrets are absent — green CI is maintained even without them." |
+
 ## After demo — full teardown test
 
 Verify destroy completes without orphan cleanup (except remote state bucket):

@@ -54,7 +54,36 @@ cosign verify-attestation "$IMAGE" --type spdxjson \
   | jq -r '.payload' | base64 -d | jq '.predicate'
 ```
 
-## Future hardening (not implemented)
+## Cluster-side enforcement (Kyverno)
 
-- Kyverno `verifyImages` admission policy on EKS: reject unsigned images in the `boutique` namespace.
+The `infra/kyverno/boutique-verify-images.yaml` `ClusterPolicy` rejects any Pod in the
+`boutique` namespace whose image was **not** signed by this repo's CI pipeline.
+
+Install after Argo CD is healthy:
+
+```powershell
+# Windows — enforce mode (blocks unsigned Pods)
+.\scripts\install-kyverno.ps1
+
+# Audit mode first (logs violations, does not block)
+.\scripts\install-kyverno.ps1 -AuditOnly
+```
+
+```bash
+./scripts/install-kyverno.sh
+./scripts/install-kyverno.sh --audit-only
+```
+
+**How it works:**
+1. Kyverno intercepts every `Pod` admission in the `boutique` namespace.
+2. For images matching `<account>.dkr.ecr.ap-southeast-1.amazonaws.com/mini-ecommerce/*`, it calls Rekor to verify the cosign signature.
+3. The signature must have been issued by `https://token.actions.githubusercontent.com` for the exact `ci-build-push.yml@refs/heads/main` subject.
+4. No signature → admission denied.
+
+**ECR auth note:** Kyverno needs to pull OCI artifacts (signatures) from ECR. The install script creates a Kubernetes `docker-registry` secret (`ecr-pull-secret`) using `aws ecr get-login-password`. ECR tokens expire after 12 hours — re-run the install script before a demo or add an automated refresh CronJob. A more robust alternative is IRSA for the Kyverno service account.
+
+## Future hardening
+
 - SLSA provenance attestation (`slsa-github-generator`).
+- IRSA for Kyverno admissionController (eliminates the 12 h ECR token refresh).
+- Extend the policy to verify SBOM attestations (`cosign verify-attestation --type spdxjson`).

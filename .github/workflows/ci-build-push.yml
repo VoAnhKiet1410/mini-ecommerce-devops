@@ -43,6 +43,18 @@ jobs:
         run: go test ./...
         working-directory: ${{ matrix.service.path }}
 
+  test-dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Run cartservice unit tests
+        # Startup falls back to AddDistributedMemoryCache when REDIS_ADDR is unset,
+        # so tests run fully in-process without a Redis sidecar.
+        run: dotnet test src/cartservice/tests/cartservice.tests.csproj --configuration Release --logger "console;verbosity=normal"
+
   # Determines whether AWS secrets are configured. build-push is skipped (not
   # failed) when the stack is torn down, keeping the overall workflow green.
   check-aws-secrets:
@@ -62,7 +74,7 @@ jobs:
           fi
 
   build-push:
-    needs: [test-go, check-aws-secrets]
+    needs: [test-go, test-dotnet, check-aws-secrets]
     if: needs.check-aws-secrets.outputs.available == 'true'
     runs-on: ubuntu-latest
     strategy:
