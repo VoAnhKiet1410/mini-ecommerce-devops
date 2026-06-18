@@ -172,3 +172,20 @@ After Phase 3 ingress has an ALB hostname, **re-run `terraform apply`** so ALB C
 ```powershell
 .\scripts\verify-phase4.ps1
 ```
+
+## 9. Enforce image signatures (Kyverno) — optional
+
+After CI has pushed at least one signed image, install Kyverno to block unsigned Pods in the `boutique` namespace:
+
+```powershell
+.\scripts\install-kyverno.ps1 -AuditOnly    # observe first
+# Review violations, then enforce:
+.\scripts\install-kyverno.ps1               # Enforce mode
+```
+
+```bash
+./scripts/install-kyverno.sh --audit-only
+./scripts/install-kyverno.sh
+```
+
+See [supply-chain.md](supply-chain.md) for details on the policy and ECR auth requirements.

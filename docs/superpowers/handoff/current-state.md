@@ -2,14 +2,14 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-11 |
+| **Cập nhật** | 2026-06-18 |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
-| **Working tree** | **Sạch** — Tier 1 CI upgrade đã commit `144f64e` (2026-06-11) |
+| **Working tree** | **Uncommitted** — Gap-fill session 2026-06-18 (xem §4b) |
 | **AWS runtime** | **DOWN** — `terraform destroy` hoàn tất 2026-06-10; cần bootstrap lại trước khi demo |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 
-**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — đã commit `144f64e`, chưa push, E2E chờ lần bring-up AWS tiếp theo.
+**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — đã commit `144f64e`, chưa push. 2026-06-18 thêm **gap-fill**: Kyverno `verifyImages`, `.NET` test CI, incident-response runbook, Known Limitations trong demo checklist — **chưa commit**.
 
 ---
 
@@ -43,7 +43,7 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 ---
 
-## 4. Những gì đã commit (working tree sạch, latest commit: 2dd11f1)
+## 4. Những gì đã commit (latest commit: 2dd11f1)
 
 | Vùng | Trạng thái |
 |------|-----------|
@@ -72,6 +72,19 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 **Yêu cầu phía repo gitops:** manifests `base/` phải reference image bằng tên ECR đầy đủ để `images:` transformer trong `overlays/aws/kustomization.yaml` match.
 
+### 4b. Gap-fill (2026-06-18) — **chưa commit**
+
+| File | Thay đổi |
+|------|----------|
+| `docs/runbooks/demo-checklist.md` | Thêm bảng **Known Limitations** (checkout EKS, RDS, HTTPS, sign vs enforce) |
+| `infra/kyverno/boutique-verify-images.yaml` | **Kyverno ClusterPolicy** mới: `verifyImages` với cosign keyless, Enforce mode, `boutique` namespace |
+| `scripts/install-kyverno.ps1` / `.sh` | Script idempotent cài Kyverno Helm + tạo ECR pull secret + apply policy; `-AuditOnly` flag |
+| `docs/runbooks/supply-chain.md` | Section "Cluster-side enforcement" thay "Future hardening" — hướng dẫn cài Kyverno |
+| `docs/runbooks/aws-up.md` | Thêm bước 9 (Kyverno optional) |
+| `.github/workflows/ci-build-push.yml` | Thêm job `test-dotnet` — chạy xUnit tests cartservice (net10.0, in-memory, không cần Redis); `build-push` depend thêm `test-dotnet` |
+| `docs/runbooks/incident-response.md` | **Runbook mới**: IR-1 ALB 5xx, IR-2 Pod CrashLoop/Pending, IR-3 Argo OutOfSync — Detect/Diagnose/Fix/Verify |
+| `docs/superpowers/handoff/current-state.md` | File này |
+
 ---
 
 ## 5. Lỗi đã fix (2026-06-10, session này)
@@ -98,7 +111,15 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 | **E** | CI mở PR image-bump trên `mini-ecommerce-gitops` | Secret `GITOPS_REPO_TOKEN` + manifests `base/` dùng tên ECR đầy đủ |
 | **F** | cosign sign + SBOM attest + `verify-image-signature.*` PASS | AWS stack up, CI green, cosign cài local |
 
-Mở rộng sau (optional): Route 53 + ACM, HPA, Spot instances, Kyverno verifyImages.
+Mở rộng sau (optional): Route 53 + ACM, HPA, Spot instances.
+
+**Gap-fill (2026-06-18) — cần commit:**
+
+| # | Verify | Cần gì |
+|---|--------|--------|
+| **G** | `test-dotnet` job xanh trên CI | push `src/**` hoặc `workflow_dispatch`; không cần AWS |
+| **H** | Kyverno Enforce reject unsigned Pod | AWS up + `.\scripts\install-kyverno.ps1` + push image unsigned thử |
+| **D–F** | (Tier 1 CI từ 2026-06-11) | xem §4a |
 
 ---
 
