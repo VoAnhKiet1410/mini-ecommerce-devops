@@ -7,6 +7,7 @@
 *.tfvars
 tfplan
 *.tfplan
+plan-output.txt
 !backend.hcl.example
 backend.hcl
 !*.tfvars.example
