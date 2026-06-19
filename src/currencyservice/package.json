@@ -11,7 +11,7 @@
     "protobufjs": "7.5.9"
   },
   "dependencies": {
-    "@google-cloud/profiler": "6.0.4",
+    "@google-cloud/profiler": "6.0.5",
     "@google-cloud/trace-agent": "8.0.0",
     "@grpc/grpc-js": "1.14.4",
     "@grpc/proto-loader": "0.8.0",
