@@ -2,14 +2,14 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-18 |
+| **Cập nhật** | 2026-06-19 |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
-| **Working tree** | **Uncommitted** — Gap-fill session 2026-06-18 (xem §4b) |
+| **Working tree** | **Clean** — tất cả committed và pushed (latest: `8ca2e69`) |
 | **AWS runtime** | **DOWN** — `terraform destroy` hoàn tất 2026-06-10; cần bootstrap lại trước khi demo |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 
-**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). 2026-06-11 thêm **Tier 1 CI upgrade** (Infracost + GitOps image-bump PR + cosign/SBOM) — đã commit `144f64e`, chưa push. 2026-06-18 thêm **gap-fill**: Kyverno `verifyImages`, `.NET` test CI, incident-response runbook, Known Limitations trong demo checklist — **chưa commit**.
+**Resume nhanh:** Dự án **hoàn chỉnh** (E2E verified 2026-06-10). Tier 1 CI upgrade (Infracost + GitOps image-bump PR + cosign/SBOM) đã commit `144f64e`. Gap-fill (Kyverno, .NET xUnit, incident runbook) đã commit `8ca2e69`. **Gitops repo verified:** path `apps/online-boutique/overlays/aws` đúng; `kustomize edit set image` matching đúng (name shortname). Untracked docs files (`docs/architecture-*.png`, `docs/draw_architecture.py`, `docs/gen_*.js`, `docs/architecture-overview*.docx`) cần commit.
 
 ---
 
@@ -103,23 +103,31 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 ## 6. Task còn lại
 
-**Tier 1 CI upgrade (2026-06-11):** đã commit `144f64e`, chưa push — cần verify E2E khi bring-up AWS tiếp theo:
+**Cần verify E2E khi bring-up AWS tiếp theo:**
 
-| # | Verify | Cần gì |
-|---|--------|--------|
-| **D** | Infracost sticky comment trên PR `infra/**` | Secret `INFRACOST_API_KEY` |
-| **E** | CI mở PR image-bump trên `mini-ecommerce-gitops` | Secret `GITOPS_REPO_TOKEN` + manifests `base/` dùng tên ECR đầy đủ |
-| **F** | cosign sign + SBOM attest + `verify-image-signature.*` PASS | AWS stack up, CI green, cosign cài local |
+| # | Verify | Cần gì | Ghi chú |
+|---|--------|--------|---------|
+| **G** | `test-dotnet` job xanh trên CI | Push `src/**` hoặc `workflow_dispatch` | **Không cần AWS** — làm được ngay |
+| **D** | Infracost sticky comment trên PR `infra/**` | Secret `INFRACOST_API_KEY` (free, infracost.io) | |
+| **E** | CI mở PR image-bump trên `mini-ecommerce-gitops` | Secret `GITOPS_REPO_TOKEN` (PAT) | Path và kustomize matching đã verified ✅ |
+| **F** | cosign sign + SBOM attest + `verify-image-signature.*` PASS | AWS stack up, CI green, cosign cài local | |
+| **H** | Kyverno Enforce reject unsigned Pod | AWS up + `.\scripts\install-kyverno.ps1` | |
+
+**Docs cần commit** (untracked, portfolio artifacts):
+
+```
+docs/architecture-diagram.png
+docs/architecture-legend.png
+docs/architecture-network.png
+docs/draw_architecture.py
+docs/gen_architecture_doc.js
+docs/gen_architecture_doc_vi.js
+docs/gen_presentation.js
+docs/architecture-overview.docx
+docs/architecture-overview-vi.docx
+```
 
 Mở rộng sau (optional): Route 53 + ACM, HPA, Spot instances.
-
-**Gap-fill (2026-06-18) — cần commit:**
-
-| # | Verify | Cần gì |
-|---|--------|--------|
-| **G** | `test-dotnet` job xanh trên CI | push `src/**` hoặc `workflow_dispatch`; không cần AWS |
-| **H** | Kyverno Enforce reject unsigned Pod | AWS up + `.\scripts\install-kyverno.ps1` + push image unsigned thử |
-| **D–F** | (Tier 1 CI từ 2026-06-11) | xem §4a |
 
 ---
 
