@@ -73,9 +73,37 @@ jobs:
             echo "AWS_ECR_ROLE_ARN not set — ECR push skipped (AWS stack is down)"
           fi
 
-  build-push:
-    needs: [test-go, test-dotnet, check-aws-secrets]
+  # Verifies the OIDC provider actually exists in AWS. Secrets may remain set
+  # after terraform destroy (OIDC provider deleted), which would cause build-push
+  # to run and fail with "No OpenIDConnect provider found". This job catches that
+  # case so build-push is skipped cleanly regardless of whether secrets were cleared.
+  verify-oidc:
+    needs: [check-aws-secrets]
     if: needs.check-aws-secrets.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      reachable: ${{ steps.result.outputs.reachable }}
+    steps:
+      - name: Test OIDC role assumption
+        id: aws-test
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: result
+        run: |
+          if [ "${{ steps.aws-test.outcome }}" == "success" ]; then
+            echo "reachable=true" >> "$GITHUB_OUTPUT"
+            echo "OIDC reachable — build-push will proceed"
+          else
+            echo "reachable=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OIDC provider unavailable (AWS stack down) — build-push skipped"
+          fi
+
+  build-push:
+    needs: [test-go, test-dotnet, check-aws-secrets, verify-oidc]
+    if: needs.verify-oidc.outputs.reachable == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -183,8 +211,8 @@ jobs:
   # after the PR is reviewed and merged (human gate stays in place).
   # Skipped gracefully when GITOPS_REPO_TOKEN is not set.
   update-gitops:
-    needs: [build-push, check-aws-secrets]
-    if: needs.check-aws-secrets.outputs.available == 'true'
+    needs: [build-push, check-aws-secrets, verify-oidc]
+    if: needs.verify-oidc.outputs.reachable == 'true'
     runs-on: ubuntu-latest
     steps:
       - id: probe
