@@ -1,160 +1,110 @@
 # Mini E-commerce DevOps Platform
 
-> **Portfolio DevOps project** by [VoAnhKiet1410](https://github.com/VoAnhKiet1410) — demonstrating Cloud/DevOps engineering skills on a real microservices workload.
+<!-- markdownlint-disable MD024 MD033 MD036 MD060 -->
+
+<div align="center">
+
+**A bilingual Cloud/DevOps portfolio project built around a real microservices e-commerce workload.**<br>
+**Dự án portfolio Cloud/DevOps song ngữ, xây dựng trên workload microservices e-commerce thực tế.**
 
 [![CI Build and Push](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/ci-build-push.yml/badge.svg)](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/ci-build-push.yml)
 [![Terraform Plan](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/terraform-plan.yml/badge.svg)](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/terraform-plan.yml)
 [![Security Scan](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/security-scan.yml/badge.svg)](https://github.com/VoAnhKiet1410/mini-ecommerce-devops/actions/workflows/security-scan.yml)
 
+**AWS EKS · Terraform · GitHub Actions · GitOps · Argo CD · ECR · RDS · Prometheus · Grafana · CloudWatch · Trivy · Checkov · cosign · SBOM**
+
+[Architecture](docs/architecture.md) · [AWS Runbook](docs/runbooks/aws-up.md) · [Teardown](docs/runbooks/aws-down.md) · [Demo Checklist](docs/runbooks/demo-checklist.md) · [Supply Chain](docs/runbooks/supply-chain.md)
+
+</div>
+
 ---
 
-## Overview
+## English
 
-This project wraps [Google's Online Boutique microservices-demo](https://github.com/GoogleCloudPlatform/microservices-demo) with a production-grade DevOps platform built from scratch. It covers the full lifecycle: local development, cloud infrastructure, CI/CD, GitOps, supply chain security, and observability — all designed to be demonstrated to recruiters then **torn down immediately** to control costs.
+### Overview
 
-**Key design decision:** the AWS stack is *ephemeral* — `terraform apply` before a demo, `terraform destroy` when done. The IaC and GitOps configuration persists in code.
+This repository is a recruiter-facing DevOps portfolio project by [VoAnhKiet1410](https://github.com/VoAnhKiet1410). It wraps Google's [Online Boutique microservices demo](https://github.com/GoogleCloudPlatform/microservices-demo) with a complete DevOps platform: local development, AWS infrastructure, CI/CD, GitOps deployment, security scanning, image signing, SBOM attestation, observability, and teardown runbooks.
 
-### What was built (not configured)
+The AWS environment is intentionally **ephemeral**: bring it up for a demo, verify the platform, then run `terraform destroy` to control cost. The infrastructure, automation, and documentation remain reproducible in code.
 
-| Layer | Built |
+### What This Project Demonstrates
+
+| Area | Implementation |
+|------|----------------|
+| Infrastructure as Code | Terraform modules for VPC, EKS, ECR, RDS, IAM OIDC, IRSA, Secrets Manager, and CloudWatch |
+| CI/CD | GitHub Actions with OIDC, matrix Docker builds, Trivy gates, ECR push, and GitOps image-bump PRs |
+| GitOps | Two-repository model with Argo CD and Kustomize manifests in `mini-ecommerce-gitops` |
+| Security | Checkov, Trivy, cosign keyless signing, syft SBOM generation, OCI attestations |
+| Observability | Prometheus, Grafana dashboard, CloudWatch alarms for RDS and ALB |
+| Operations | Runbooks for AWS bring-up, verification, monitoring, incident response, and teardown |
+
+### Architecture
+
+![AWS platform architecture](docs/assets/aws-platform-architecture.png)
+
+```text
+Developer / GitHub
+  |-- Source code, Terraform, workflows, runbooks
+  |-- GitHub Actions: test, scan, build, sign, push, update GitOps
+  |-- GitOps repo: Kustomize manifests and Argo CD applications
+
+AWS ap-southeast-1
+  |-- ECR: happy-path service images
+  |-- EKS 1.30: frontend, product catalog, cart, checkout, Redis, Argo CD, ESO, monitoring
+  |-- ALB: public HTTP entry point for the demo
+  |-- RDS PostgreSQL 16: platform database foundation
+  |-- Secrets Manager: RDS credentials synced by External Secrets Operator
+  |-- CloudWatch: alarms for RDS and ALB health
+```
+
+For the full Mermaid diagram, see [`docs/architecture.md`](docs/architecture.md).
+
+### Two-Repository GitOps Model
+
+| Repository | Purpose |
+|------------|---------|
+| [`mini-ecommerce-devops`](https://github.com/VoAnhKiet1410/mini-ecommerce-devops) | Application source, Terraform infrastructure, CI workflows, scripts, and runbooks |
+| [`mini-ecommerce-gitops`](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) | Kubernetes Kustomize base/overlays and Argo CD application manifests |
+
+The CI pipeline builds images and pushes them to ECR. It then opens a GitOps image-bump PR. After review and merge, Argo CD syncs the updated manifests to EKS.
+
+### Service Scope
+
+This project focuses on the happy path instead of deploying every upstream Online Boutique service.
+
+| Service | Language | Runtime Scope | Storage |
+|---------|----------|---------------|---------|
+| `frontend` | Go | Local + EKS | Stateless |
+| `productcatalogservice` | Go | Local + EKS | In-memory JSON catalog |
+| `cartservice` | C# .NET | Local + EKS | Redis |
+| `checkoutservice` | Go | Local + EKS | Stateless orchestrator |
+| `currencyservice` | Node.js | Local Compose only | JSON rates |
+| `shippingservice` | Go | Local Compose only | Stateless mock |
+| `paymentservice` | Node.js | Local Compose only | Stateless mock |
+| `emailservice` | Python | Local Compose only | Stateless mock |
+
+### Tech Stack
+
+| Layer | Tools |
 |-------|-------|
-| IaC | Terraform modules for VPC, EKS, ECR, RDS, IAM OIDC, IRSA, Secrets Manager, CloudWatch |
-| CI/CD | GitHub Actions pipelines: image build → Trivy scan → ECR push → cosign sign → SBOM attest → GitOps PR |
-| GitOps | Argo CD + Kustomize two-repo model; ESO syncs RDS credentials from Secrets Manager |
-| Supply chain | cosign keyless signing (Sigstore/Fulcio) + syft SPDX SBOM attestation, verified against GitHub OIDC identity |
-| Observability | kube-prometheus-stack (Prometheus + Grafana) + CloudWatch alarms for RDS and ALB |
-| FinOps | Infracost cost-diff sticky comment on every infrastructure PR |
+| Cloud | AWS `ap-southeast-1`, EKS 1.30, ECR, RDS PostgreSQL 16, ALB, Secrets Manager, CloudWatch |
+| IaC | Terraform `>= 1.5`, S3 remote state, DynamoDB state lock |
+| Containers | Docker, Docker Compose, multi-stage Dockerfiles |
+| Kubernetes | EKS, Argo CD, Kustomize, External Secrets Operator, AWS Load Balancer Controller |
+| CI/CD | GitHub Actions, GitHub OIDC, Docker Buildx, Dependabot |
+| Security | Trivy, Checkov, cosign keyless signing, syft SBOM, optional Kyverno policy |
+| Observability | Prometheus, Grafana, kube-prometheus-stack, CloudWatch alarms |
 
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  GitHub                                                           │
-│  ├── mini-ecommerce-devops (this repo)                           │
-│  │     src/ ──► CI build/push ──► ECR ──► cosign sign + SBOM     │
-│  │     infra/ ──► Terraform plan + Checkov + Infracost on PR     │
-│  └── mini-ecommerce-gitops (Kustomize manifests)                 │
-│        CI opens image-bump PR ──► Merge ──► Argo CD syncs        │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                     terraform apply
-                              │
-┌──────────────────────────────────────────────────────────────────┐
-│  AWS ap-southeast-1                                               │
-│  ├── ECR  mini-ecommerce/{frontend,productcatalog,cart,checkout} │
-│  ├── EKS  mini-ecommerce-devops (1.30, m7i-flex.large)           │
-│  │     ├── boutique namespace (6 pods via Argo CD)               │
-│  │     ├── AWS Load Balancer Controller  →  ALB (HTTP)           │
-│  │     ├── External Secrets Operator  →  Secrets Manager         │
-│  │     ├── Argo CD                                               │
-│  │     └── kube-prometheus-stack (Prometheus + Grafana)          │
-│  ├── RDS  PostgreSQL 16 (platform DB, private subnets)           │
-│  ├── Secrets Manager  mini-ecommerce-devops/rds/master           │
-│  └── CloudWatch  alarms: RDS CPU/storage, ALB 5xx               │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-See [docs/architecture.md](docs/architecture.md) for the full Mermaid diagram.
-
-### Two-repo GitOps model
-
-| Repo | Contents |
-|------|----------|
-| `mini-ecommerce-devops` *(this repo)* | Application source, Terraform infra, CI workflows, runbooks |
-| [`mini-ecommerce-gitops`](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) | Kustomize `base/` + `overlays/aws/`, Argo CD Application manifests |
-
-CI pushes images → ECR. CI then opens an image-bump PR on the gitops repo. After human review + merge, Argo CD detects the change and syncs the cluster.
-
-### Happy-path services
-
-Only 4 services are built by CI and deployed to EKS:
-
-| Service | Language | Port | Storage |
-|---------|----------|------|---------|
-| `frontend` | Go | 8080 (HTTP) | — |
-| `productcatalogservice` | Go | 3550 (gRPC) | In-memory JSON |
-| `cartservice` | C# .NET | 7070 (gRPC) | Redis |
-| `checkoutservice` | Go | 5050 (gRPC) | — (orchestrator) |
-
-`currencyservice`, `shippingservice`, `paymentservice`, `emailservice` run in Docker Compose for local development only.
-
----
-
-## Tech Stack
-
-| Category | Technology |
-|----------|-----------|
-| Cloud | AWS (`ap-southeast-1`): EKS 1.30, ECR, RDS PostgreSQL 16, ALB, Secrets Manager, CloudWatch |
-| IaC | Terraform ≥ 1.5, remote state on S3 + DynamoDB lock |
-| Containers | Docker, Docker Compose, multi-stage builds (distroless/alpine) |
-| Orchestration | Kubernetes (EKS), Argo CD, Kustomize |
-| CI/CD | GitHub Actions (OIDC), Docker Buildx, Dependabot |
-| Security | Trivy (image + fs scan), Checkov (Terraform/K8s), cosign keyless, syft SBOM |
-| Observability | Prometheus, Grafana (`kube-prometheus-stack`), CloudWatch alarms |
-| Secrets | AWS Secrets Manager + External Secrets Operator (EKS); `.env` (local) |
-| Cost | Infracost (PR cost-diff comments) |
-
----
-
-## Prerequisites
-
-### Local development
-
-| Tool | Version | Install |
-|------|---------|---------|
-| Docker Desktop | ≥ 4.x | [docker.com](https://www.docker.com/products/docker-desktop) |
-| Git | any | — |
-
-### AWS deployment (additional)
-
-| Tool | Install |
-|------|---------|
-| AWS CLI v2 | `winget install Amazon.AWSCLI` |
-| Terraform ≥ 1.5 | `winget install Hashicorp.Terraform` |
-| kubectl | `winget install Kubernetes.kubectl` |
-| Helm ≥ 3 | `winget install Helm.Helm` |
-| GitHub CLI | `winget install GitHub.cli` |
-
-### Supply chain verification (optional)
-
-```powershell
-winget install sigstore.cosign   # cosign keyless verify
-```
-
----
-
-## Local Development Setup
-
-### 1. Clone and configure environment
+### Local Quick Start
 
 ```bash
 git clone https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git
 cd mini-ecommerce-devops
 cp .env.example .env
-```
-
-Edit `.env` if needed (defaults work out of the box):
-
-```env
-FRONTEND_PORT=8080
-POSTGRES_PASSWORD=change-me-local-only   # local only — never commit real value
-```
-
-### 2. Start the stack
-
-```bash
-# Linux / macOS
-docker compose up --build -d
-
-# Windows PowerShell
 docker compose up --build -d
 ```
 
-Services started: `postgres`, `redis`, `frontend`, `productcatalogservice`, `cartservice`, `checkoutservice`, `currencyservice`, `shippingservice`, `paymentservice`, `emailservice`.
-
-### 3. Verify
+Verify the local stack:
 
 ```bash
 # Linux / macOS
@@ -166,357 +116,290 @@ Services started: `postgres`, `redis`, `frontend`, `productcatalogservice`, `car
 .\scripts\verify-platform-db.ps1
 ```
 
-Both scripts should print **PASS**. Open **http://localhost:8080** to browse the store.
+Open the storefront at [http://localhost:8080](http://localhost:8080).
 
-### 4. Useful commands
+### AWS Demo Flow
 
-```bash
-docker compose logs -f frontend        # stream frontend logs
-docker compose logs -f cartservice     # stream cart logs
-docker compose ps                      # check container status
-docker compose down                    # stop all services
-docker compose down -v                 # stop and remove volumes (reset DB)
-```
-
----
-
-## AWS Deployment
-
-> **Cost warning:** the AWS stack costs ~$2–3 USD/hour (EKS node + RDS). Run `terraform destroy` when done.
-
-### Step 1 — Bootstrap remote state (first time only)
+> Cost note: the AWS stack is designed for short demos. Destroy it after use.
 
 ```bash
+# 1. Bootstrap remote state, first time only
 cd infra/bootstrap/state
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars: set a unique S3 bucket name, e.g.:
-#   bucket_name = "your-username-mini-ecommerce-tfstate-<aws-account-id>"
 terraform init
 terraform apply
-```
 
-The bootstrap creates an S3 bucket and DynamoDB table for Terraform state locking. **Do not destroy the bootstrap stack** — it persists across ephemeral demo cycles.
-
-### Step 2 — Configure backend and variables
-
-```bash
-cd infra/environments/aws
+# 2. Plan and apply AWS environment manually
+cd ../../environments/aws
 cp backend.hcl.example backend.hcl
 cp terraform.tfvars.example terraform.tfvars
-```
-
-Edit `backend.hcl`:
-```hcl
-bucket = "your-username-mini-ecommerce-tfstate-<aws-account-id>"
-```
-
-Edit `terraform.tfvars`:
-```hcl
-aws_region   = "ap-southeast-1"
-project_name = "mini-ecommerce-devops"
-github_org   = "YourGitHubOrg"
-github_repo  = "mini-ecommerce-devops"
-```
-
-> **Never commit** `backend.hcl` or `terraform.tfvars` — they are gitignored.
-
-### Step 3 — Apply infrastructure (~15 min)
-
-```bash
 terraform init -backend-config=backend.hcl
 terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-Resources created: VPC, EKS cluster + node group, ECR repos (4), RDS PostgreSQL, IAM OIDC + IRSA roles, Secrets Manager secret, CloudWatch alarms.
-
-### Step 4 — Configure kubectl
+Then install cluster tooling in order:
 
 ```powershell
 aws eks update-kubeconfig --region ap-southeast-1 --name mini-ecommerce-devops
-kubectl get nodes   # should show 1 node Ready
-```
-
-### Step 5 — Install cluster tooling
-
-Run the install scripts in order:
-
-```powershell
-.\scripts\install-aws-lbc.ps1      # AWS Load Balancer Controller
-.\scripts\install-eso.ps1          # External Secrets Operator
-.\scripts\install-argocd.ps1       # Argo CD + sync GitOps app
-```
-
-Each script is idempotent — safe to re-run. After `install-argocd.ps1`, verify:
-
-```powershell
-kubectl get pods -n boutique        # 6 pods should be Running
-kubectl get ingress -n boutique     # ALB hostname appears
-```
-
-### Step 6 — Configure GitHub Actions secrets
-
-Retrieve IAM role ARNs from Terraform outputs:
-
-```bash
-cd infra/environments/aws
-terraform output github_actions_ecr_role_arn
-terraform output github_actions_terraform_plan_role_arn
-```
-
-Set secrets in the GitHub repo (`Settings → Secrets and variables → Actions`):
-
-| Secret | Value |
-|--------|-------|
-| `AWS_ECR_ROLE_ARN` | `terraform output -raw github_actions_ecr_role_arn` |
-| `AWS_TERRAFORM_PLAN_ROLE_ARN` | `terraform output -raw github_actions_terraform_plan_role_arn` |
-| `AWS_TF_STATE_BUCKET` | Your S3 bucket name from bootstrap |
-| `INFRACOST_API_KEY` | Free at [infracost.io](https://www.infracost.io) — `infracost auth login` then `infracost configure get api_key` |
-| `GITOPS_REPO_TOKEN` | Fine-grained PAT scoped to `mini-ecommerce-gitops` with Contents + Pull requests **Read/Write** |
-
-### Step 7 — Trigger CI
-
-Push any change to `src/**` or use workflow dispatch:
-
-```bash
-gh workflow run ci-build-push.yml --ref main
-```
-
-CI will: build 4 images → Trivy gate → push to ECR → cosign sign → SBOM attest → open image-bump PR on gitops repo.
-
-### Step 8 — Install monitoring
-
-```powershell
-$env:GRAFANA_ADMIN_PASSWORD = "YourPassword"
+.\scripts\install-aws-lbc.ps1
+.\scripts\install-eso.ps1
+.\scripts\install-argocd.ps1
 .\scripts\install-monitoring.ps1
 .\scripts\verify-phase4.ps1
 ```
 
-Access Grafana:
-```powershell
-kubectl port-forward svc/monitoring-grafana -n observability 3000:80
-# Open http://localhost:3000  user: admin  password: YourPassword
-```
-
-Import dashboard: `observability/aws/dashboards/cluster-overview.json`
-
-### Step 9 — Re-apply Terraform for ALB alarm
-
-After Argo CD provisions the ALB (via AWS LBC), run Terraform again to pick up the ALB ARN for the CloudWatch alarm:
+Teardown when the demo is complete:
 
 ```bash
-cd infra/environments/aws
-terraform plan -out=tfplan
-terraform apply tfplan    # adds 1 resource: ALB 5xx alarm
-```
-
-### Step 10 — Teardown (IMPORTANT)
-
-```powershell
-# If ALB/SG orphaned by Kubernetes block destroy:
-aws elbv2 delete-load-balancer --load-balancer-arn <arn>
-aws ec2 delete-security-group --group-id <sg-id>
-aws ecr delete-repository --force --repository-name mini-ecommerce/<service>   # repeat x4
-
 cd infra/environments/aws
 terraform destroy
 ```
 
-See [docs/runbooks/aws-down.md](docs/runbooks/aws-down.md) for the full safe teardown procedure.
+Detailed steps are documented in [`docs/runbooks/aws-up.md`](docs/runbooks/aws-up.md) and [`docs/runbooks/aws-down.md`](docs/runbooks/aws-down.md).
+
+### CI/CD Pipeline
+
+| Workflow | Purpose |
+|----------|---------|
+| [`ci-build-push.yml`](.github/workflows/ci-build-push.yml) | Tests selected services, builds happy-path images, scans with Trivy, pushes to ECR, signs images, creates SBOM attestations, and opens GitOps PRs |
+| [`terraform-plan.yml`](.github/workflows/terraform-plan.yml) | Runs `terraform fmt`, `validate`, `plan`, Checkov, and Infracost comments on infrastructure PRs |
+| [`security-scan.yml`](.github/workflows/security-scan.yml) | Runs scheduled and PR security scans with Checkov and Trivy filesystem scanning |
+
+### Observability
+
+![Grafana cluster overview](docs/assets/grafana-cluster-overview.png)
+
+Prometheus and Grafana provide Kubernetes workload visibility, while CloudWatch alarms cover RDS CPU, RDS free storage, and ALB 5xx target errors.
+
+### Portfolio Highlights
+
+- Built an end-to-end DevOps platform around a real microservices workload instead of a toy single-service demo.
+- Provisioned AWS EKS, ECR, RDS, ALB, IAM OIDC, IRSA, Secrets Manager, and CloudWatch with reusable Terraform modules.
+- Implemented credential-free CI/CD using GitHub OIDC instead of long-lived AWS keys.
+- Added supply chain security with Trivy, Checkov, cosign keyless image signing, syft SBOMs, and OCI attestations.
+- Designed a two-repository GitOps workflow where CI opens image-bump PRs and Argo CD deploys after review.
+- Documented operational runbooks for deployment, verification, monitoring, incident response, and teardown.
 
 ---
 
-## CI/CD Pipeline
+## Tiếng Việt
 
-### Build and Push (`ci-build-push.yml`)
+### Tổng Quan
 
-Triggered on push to `src/**` or `workflow_dispatch`.
+Repository này là dự án portfolio DevOps của [VoAnhKiet1410](https://github.com/VoAnhKiet1410), được xây dựng trên nền tảng [Online Boutique microservices demo](https://github.com/GoogleCloudPlatform/microservices-demo) của Google. Mục tiêu là thể hiện năng lực Cloud/DevOps qua một workload microservices thực tế: phát triển local, hạ tầng AWS, CI/CD, GitOps, security scanning, image signing, SBOM, observability và runbook vận hành.
 
-```
-test-go (3 Go services in parallel)
-    │
-check-aws-secrets ──► skip gracefully if AWS_ECR_ROLE_ARN not set
-    │
-build-push (4 services in matrix, parallel)
-    ├── docker build + push → ECR (sha + latest tags)
-    ├── Trivy gate: FAIL on CRITICAL CVEs
-    ├── Trivy SARIF: upload HIGH+CRITICAL as artifacts
-    ├── cosign sign keyless (GitHub OIDC → Sigstore Fulcio)
-    ├── syft SBOM (SPDX JSON) → uploaded as artifact
-    └── cosign attest (SBOM attached to image in ECR)
-    │
-update-gitops
-    └── kustomize edit set image → open PR on mini-ecommerce-gitops
-```
+Môi trường AWS được thiết kế theo hướng **ephemeral**: bật lên để demo, kiểm tra toàn bộ platform, sau đó chạy `terraform destroy` để kiểm soát chi phí. Toàn bộ hạ tầng và quy trình vẫn được lưu lại dưới dạng code để tái tạo bất cứ lúc nào.
 
-### Terraform Plan (`terraform-plan.yml`)
+### Dự Án Thể Hiện Điều Gì
 
-Triggered on PRs touching `infra/**`.
+| Mảng | Cách triển khai |
+|------|-----------------|
+| Infrastructure as Code | Terraform modules cho VPC, EKS, ECR, RDS, IAM OIDC, IRSA, Secrets Manager và CloudWatch |
+| CI/CD | GitHub Actions dùng OIDC, build Docker theo matrix, Trivy gate, push ECR và tự mở PR cập nhật GitOps |
+| GitOps | Mô hình 2 repository với Argo CD và Kustomize manifests trong `mini-ecommerce-gitops` |
+| Security | Checkov, Trivy, cosign keyless signing, syft SBOM, OCI attestations |
+| Observability | Prometheus, Grafana dashboard, CloudWatch alarms cho RDS và ALB |
+| Operations | Runbook từng bước cho bring-up AWS, verify, monitoring, incident response và teardown |
 
-```
-plan job
-    ├── terraform fmt -check
-    ├── terraform validate
-    ├── terraform plan (sticky PR comment)
-    └── Checkov (baseline)
+### Kiến Trúc
 
-infracost job (parallel)
-    ├── infracost breakdown (base branch)
-    ├── infracost diff (PR branch)
-    └── sticky PR comment with monthly cost estimate
+![Sơ đồ kiến trúc AWS](docs/assets/aws-platform-architecture.png)
+
+```text
+Developer / GitHub
+  |-- Source code, Terraform, workflows, runbooks
+  |-- GitHub Actions: test, scan, build, sign, push, update GitOps
+  |-- GitOps repo: Kustomize manifests và Argo CD applications
+
+AWS ap-southeast-1
+  |-- ECR: images của các happy-path services
+  |-- EKS 1.30: frontend, product catalog, cart, checkout, Redis, Argo CD, ESO, monitoring
+  |-- ALB: public HTTP entry point cho demo
+  |-- RDS PostgreSQL 16: nền tảng platform database
+  |-- Secrets Manager: RDS credentials được sync bởi External Secrets Operator
+  |-- CloudWatch: alarms cho sức khỏe RDS và ALB
 ```
 
-### Security Scan (`security-scan.yml`)
+Sơ đồ đầy đủ nằm trong [`docs/architecture.md`](docs/architecture.md).
 
-Scheduled Mondays 06:00 UTC + on PR.
+### Mô Hình GitOps 2 Repository
 
+| Repository | Vai trò |
+|------------|---------|
+| [`mini-ecommerce-devops`](https://github.com/VoAnhKiet1410/mini-ecommerce-devops) | Source code ứng dụng, Terraform infrastructure, CI workflows, scripts và runbooks |
+| [`mini-ecommerce-gitops`](https://github.com/VoAnhKiet1410/mini-ecommerce-gitops) | Kubernetes Kustomize base/overlays và Argo CD application manifests |
+
+CI build image và push lên ECR, sau đó mở PR cập nhật image tag ở GitOps repo. Sau khi review và merge, Argo CD tự đồng bộ manifest mới lên EKS.
+
+### Phạm Vi Service
+
+Project tập trung vào happy path thay vì deploy toàn bộ service từ upstream Online Boutique.
+
+| Service | Ngôn ngữ | Phạm vi chạy | Lưu trữ |
+|---------|----------|--------------|---------|
+| `frontend` | Go | Local + EKS | Stateless |
+| `productcatalogservice` | Go | Local + EKS | Catalog JSON in-memory |
+| `cartservice` | C# .NET | Local + EKS | Redis |
+| `checkoutservice` | Go | Local + EKS | Orchestrator stateless |
+| `currencyservice` | Node.js | Chỉ local Compose | JSON rates |
+| `shippingservice` | Go | Chỉ local Compose | Mock stateless |
+| `paymentservice` | Node.js | Chỉ local Compose | Mock stateless |
+| `emailservice` | Python | Chỉ local Compose | Mock stateless |
+
+### Công Nghệ Sử Dụng
+
+| Layer | Công nghệ |
+|-------|-----------|
+| Cloud | AWS `ap-southeast-1`, EKS 1.30, ECR, RDS PostgreSQL 16, ALB, Secrets Manager, CloudWatch |
+| IaC | Terraform `>= 1.5`, S3 remote state, DynamoDB state lock |
+| Containers | Docker, Docker Compose, multi-stage Dockerfiles |
+| Kubernetes | EKS, Argo CD, Kustomize, External Secrets Operator, AWS Load Balancer Controller |
+| CI/CD | GitHub Actions, GitHub OIDC, Docker Buildx, Dependabot |
+| Security | Trivy, Checkov, cosign keyless signing, syft SBOM, tùy chọn Kyverno policy |
+| Observability | Prometheus, Grafana, kube-prometheus-stack, CloudWatch alarms |
+
+### Chạy Local Nhanh
+
+```bash
+git clone https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git
+cd mini-ecommerce-devops
+cp .env.example .env
+docker compose up --build -d
 ```
-Checkov → Terraform + Kubernetes frameworks
-Trivy fs → HIGH + CRITICAL in src/
+
+Kiểm tra local stack:
+
+```bash
+# Linux / macOS
+./scripts/smoke-local.sh
+./scripts/verify-platform-db.sh
+
+# Windows PowerShell
+.\scripts\smoke-local.ps1
+.\scripts\verify-platform-db.ps1
 ```
 
----
+Mở storefront tại [http://localhost:8080](http://localhost:8080).
 
-## Supply Chain Security
+### Luồng Demo Trên AWS
 
-Every happy-path image pushed to ECR is:
+> Lưu ý chi phí: AWS stack chỉ nên bật trong thời gian demo. Hãy destroy sau khi dùng xong.
 
-1. **Scanned** — Trivy fails the build on any CRITICAL CVE
-2. **Signed** — cosign keyless (GitHub OIDC → ephemeral certificate from Sigstore Fulcio; logged in Rekor)
-3. **Attested** — syft SPDX SBOM attached as OCI attestation
+```bash
+# 1. Bootstrap remote state, chỉ cần làm lần đầu
+cd infra/bootstrap/state
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform apply
 
-Verify a built image locally:
+# 2. Plan và apply AWS environment thủ công
+cd ../../environments/aws
+cp backend.hcl.example backend.hcl
+cp terraform.tfvars.example terraform.tfvars
+terraform init -backend-config=backend.hcl
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+Sau đó cài tooling trong cluster theo đúng thứ tự:
 
 ```powershell
-# Windows — requires: aws CLI (authenticated) + cosign (winget install sigstore.cosign)
-.\scripts\verify-image-signature.ps1                          # frontend:latest
-.\scripts\verify-image-signature.ps1 -Service cartservice -Tag <git-sha>
-
-# Linux / macOS
-./scripts/verify-image-signature.sh
-./scripts/verify-image-signature.sh cartservice <git-sha>
+aws eks update-kubeconfig --region ap-southeast-1 --name mini-ecommerce-devops
+.\scripts\install-aws-lbc.ps1
+.\scripts\install-eso.ps1
+.\scripts\install-argocd.ps1
+.\scripts\install-monitoring.ps1
+.\scripts\verify-phase4.ps1
 ```
 
-See [docs/runbooks/supply-chain.md](docs/runbooks/supply-chain.md) for the full signing flow and SBOM inspection.
+Destroy sau khi demo xong:
 
----
+```bash
+cd infra/environments/aws
+terraform destroy
+```
 
-## Observability
+Chi tiết nằm trong [`docs/runbooks/aws-up.md`](docs/runbooks/aws-up.md) và [`docs/runbooks/aws-down.md`](docs/runbooks/aws-down.md).
 
-| Component | What it covers |
-|-----------|---------------|
-| Prometheus | Kubernetes workload metrics (kube-state-metrics, node-exporter) |
-| Grafana | Cluster overview dashboard (`observability/aws/dashboards/cluster-overview.json`) |
-| CloudWatch | RDS CPU high, RDS free storage low, ALB 5xx target errors |
+### CI/CD Pipeline
 
-![Grafana cluster overview — Online Boutique pods on EKS](docs/assets/grafana-cluster-overview.svg)
+| Workflow | Vai trò |
+|----------|---------|
+| [`ci-build-push.yml`](.github/workflows/ci-build-push.yml) | Test service, build image happy-path, scan bằng Trivy, push ECR, sign image, tạo SBOM attestation và mở GitOps PR |
+| [`terraform-plan.yml`](.github/workflows/terraform-plan.yml) | Chạy `terraform fmt`, `validate`, `plan`, Checkov và Infracost comment trên PR hạ tầng |
+| [`security-scan.yml`](.github/workflows/security-scan.yml) | Chạy security scan định kỳ và trên PR bằng Checkov + Trivy filesystem scan |
 
----
+### Observability
 
-## Environment Variables Reference
+![Grafana cluster overview](docs/assets/grafana-cluster-overview.png)
 
-### Local (`.env` — copy from `.env.example`, never commit)
+Prometheus và Grafana cung cấp góc nhìn về workload Kubernetes; CloudWatch alarms theo dõi RDS CPU, dung lượng trống của RDS và lỗi ALB 5xx.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FRONTEND_PORT` | `8080` | Host port for the frontend |
-| `PRODUCT_CATALOG_SERVICE_ADDR` | `productcatalogservice:3550` | gRPC address |
-| `CART_SERVICE_ADDR` | `cartservice:7070` | gRPC address |
-| `CHECKOUT_SERVICE_ADDR` | `checkoutservice:5050` | gRPC address |
-| `CURRENCY_SERVICE_ADDR` | `currencyservice:7000` | gRPC address |
-| `SHIPPING_SERVICE_ADDR` | `shippingservice:50051` | gRPC address |
-| `REDIS_ADDR` | `redis:6379` | Redis for cartservice |
-| `POSTGRES_HOST` | `localhost` | Platform DB host |
-| `POSTGRES_PORT` | `5432` | Platform DB port |
-| `POSTGRES_DB` | `platform` | Database name |
-| `POSTGRES_USER` | `platform` | DB user |
-| `POSTGRES_PASSWORD` | `change-me-local-only` | **Never commit a real value** |
+### Điểm Nhấn Portfolio
 
-### GitHub Actions Secrets
-
-| Secret | Source |
-|--------|--------|
-| `AWS_ECR_ROLE_ARN` | `terraform output -raw github_actions_ecr_role_arn` |
-| `AWS_TERRAFORM_PLAN_ROLE_ARN` | `terraform output -raw github_actions_terraform_plan_role_arn` |
-| `AWS_TF_STATE_BUCKET` | S3 bucket name from `infra/bootstrap/state` |
-| `INFRACOST_API_KEY` | `infracost configure get api_key` (free account) |
-| `GITOPS_REPO_TOKEN` | Fine-grained PAT — `mini-ecommerce-gitops` only, Contents + PRs RW |
-
-### Terraform Variables (`infra/environments/aws/terraform.tfvars` — gitignored)
-
-| Variable | Description |
-|----------|-------------|
-| `aws_region` | AWS region (default `ap-southeast-1`) |
-| `project_name` | Resource name prefix (default `mini-ecommerce-devops`) |
-| `github_org` | GitHub organization/username |
-| `github_repo` | Repository name (without org) |
+- Xây dựng platform DevOps end-to-end trên workload microservices thực tế, không phải demo một service đơn giản.
+- Provision AWS EKS, ECR, RDS, ALB, IAM OIDC, IRSA, Secrets Manager và CloudWatch bằng Terraform modules có thể tái sử dụng.
+- Triển khai CI/CD không dùng long-lived AWS keys nhờ GitHub OIDC.
+- Bổ sung supply chain security với Trivy, Checkov, cosign keyless signing, syft SBOM và OCI attestations.
+- Thiết kế GitOps 2 repository: CI mở PR cập nhật image tag, Argo CD deploy sau khi review.
+- Viết runbook vận hành cho deployment, verification, monitoring, incident response và teardown.
 
 ---
 
 ## Repository Structure
 
-```
+```text
 .
-├── .github/workflows/
-│   ├── ci-build-push.yml        # Build → Trivy → ECR → cosign/SBOM → GitOps PR
-│   ├── terraform-plan.yml       # Plan + Checkov + Infracost on infra/ PRs
-│   └── security-scan.yml        # Checkov + Trivy fs (scheduled + PR)
-├── src/
-│   ├── frontend/                # Go HTTP server (gorilla/mux)
-│   ├── productcatalogservice/   # Go gRPC — catalog from products.json
-│   ├── cartservice/             # C# .NET gRPC — Redis-backed cart
-│   ├── checkoutservice/         # Go gRPC — order orchestrator
-│   ├── currencyservice/         # Node.js gRPC — currency conversion
-│   ├── paymentservice/          # Node.js gRPC — mock payment
-│   ├── emailservice/            # Python gRPC — mock email
-│   ├── shippingservice/         # Go gRPC — mock shipping
-│   └── protos/                  # Shared protobuf definitions
-├── infra/
-│   ├── bootstrap/state/         # S3 + DynamoDB for Terraform remote state
-│   ├── environments/aws/        # Root module (VPC, EKS, ECR, RDS, IAM, …)
-│   └── modules/                 # ecr, eks, iam-github-oidc, iam-irsa,
-│                                #   rds, secrets, observability-cloudwatch, vpc
-├── observability/aws/
-│   ├── dashboards/              # Grafana dashboard JSON
-│   └── helm-values/             # kube-prometheus-stack values
-├── scripts/                     # .sh + .ps1 pairs for every operation
-├── docs/
-│   ├── architecture.md          # Mermaid system diagram
-│   └── runbooks/                # aws-up, aws-down, observability,
-│                                #   github-actions-setup, supply-chain, demo-checklist
-└── docker-compose.yml           # Local stack: all 8 happy-path services
+|-- .github/workflows/          # CI build/push, Terraform plan, security scan
+|-- src/                        # Microservices source code
+|-- infra/                      # Terraform bootstrap, AWS environment, reusable modules
+|-- observability/aws/          # Grafana dashboards and Helm values
+|-- scripts/                    # PowerShell and Bash automation scripts
+|-- docs/                       # Architecture docs, runbooks, demo checklist
+|-- docker-compose.yml          # Local development stack
+`-- README.md
 ```
 
----
-
-## Portfolio Highlights
-
-- Provisioned **AWS EKS**, **ECR**, **RDS PostgreSQL 16**, and **ALB** using **Terraform** (`ap-southeast-1`); remote state with S3 + DynamoDB; ephemeral cost model with full `terraform destroy` procedure.
-- Built **GitHub Actions** CI with **OIDC** (no long-lived credentials): multi-service matrix build, **Trivy** CRITICAL gate, ECR push, **Checkov** IaC scan.
-- Secured the software supply chain: **cosign keyless signing** (Sigstore Fulcio/Rekor) + **syft SPDX SBOM** attestations on every image, verified against the GitHub Actions OIDC identity.
-- Implemented a **closed GitOps loop**: CI auto-opens Kustomize image-bump PRs; **Argo CD** deploys after human review — two-repo model with **External Secrets Operator** syncing credentials from **AWS Secrets Manager**.
-- Added **FinOps guardrails**: **Infracost** cost-diff sticky comment on every infrastructure PR.
-- Deployed and operated **Prometheus**, **Grafana**, and **CloudWatch alarms** for live workload observability on Kubernetes.
-
-**Recruiter demo script:** [docs/runbooks/demo-checklist.md](docs/runbooks/demo-checklist.md)
-
----
-
-## Runbooks
+## Key Runbooks
 
 | Document | Purpose |
 |----------|---------|
-| [docs/runbooks/aws-up.md](docs/runbooks/aws-up.md) | Step-by-step AWS stack bring-up |
-| [docs/runbooks/aws-down.md](docs/runbooks/aws-down.md) | Safe teardown procedure |
-| [docs/runbooks/github-actions-setup.md](docs/runbooks/github-actions-setup.md) | GitHub secrets + OIDC trust configuration |
-| [docs/runbooks/observability.md](docs/runbooks/observability.md) | Prometheus / Grafana / CloudWatch setup |
-| [docs/runbooks/supply-chain.md](docs/runbooks/supply-chain.md) | cosign sign, attest, verify flow |
-| [docs/runbooks/demo-checklist.md](docs/runbooks/demo-checklist.md) | Recruiter demo script |
+| [`docs/runbooks/aws-up.md`](docs/runbooks/aws-up.md) | AWS stack bring-up |
+| [`docs/runbooks/aws-down.md`](docs/runbooks/aws-down.md) | Safe AWS teardown |
+| [`docs/runbooks/github-actions-setup.md`](docs/runbooks/github-actions-setup.md) | GitHub secrets and OIDC setup |
+| [`docs/runbooks/observability.md`](docs/runbooks/observability.md) | Prometheus, Grafana, and CloudWatch setup |
+| [`docs/runbooks/supply-chain.md`](docs/runbooks/supply-chain.md) | Image signing, SBOM, and verification |
+| [`docs/runbooks/demo-checklist.md`](docs/runbooks/demo-checklist.md) | Recruiter demo checklist |
+| [`docs/runbooks/incident-response.md`](docs/runbooks/incident-response.md) | Incident response playbook |
+
+## Important Notes
+
+- Terraform `apply` is manual only. CI must never apply infrastructure.
+- AWS resources are demo-oriented and should be destroyed after use.
+- RDS is a platform database foundation; Phase 1 app data remains Redis and in-memory catalog.
+- GitOps manifests live in a separate repository and should not be merged into this app repository.
+- Do not commit `.env`, `terraform.tfvars`, `backend.hcl`, `tfplan`, state files, or real secrets.
+
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/VoAnhKiet1410">
+        <img src="https://avatars.githubusercontent.com/VoAnhKiet1410" width="88" alt="VoAnhKiet1410" />
+        <br />
+        <sub><strong>VoAnhKiet1410</strong></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## Notes
+<div align="center">
 
-- **RDS is a platform database** — happy-path services use upstream storage (Redis, in-memory catalog); RDS is provisioned as infrastructure foundation, not used by the application in Phase 1.
-- **AWS account:** `962765735385`, region: `ap-southeast-1`, EKS cluster: `mini-ecommerce-devops`.
-- **State bucket:** `voanhkiet1410-mini-ecommerce-tfstate-962765735385` (persists across destroy/apply cycles).
+**Built by [VoAnhKiet1410](https://github.com/VoAnhKiet1410) for Cloud/DevOps portfolio demonstration.**<br>
+**Được xây dựng bởi [VoAnhKiet1410](https://github.com/VoAnhKiet1410) cho mục tiêu portfolio Cloud/DevOps.**
+
+</div>
