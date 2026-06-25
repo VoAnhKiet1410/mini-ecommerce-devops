@@ -2,10 +2,10 @@
 
 | Field | Value |
 |-------|--------|
-| **Cập nhật** | 2026-06-19 |
+| **Cập nhật** | 2026-06-25 |
 | **Branch** | `main` |
 | **Remote** | `https://github.com/VoAnhKiet1410/mini-ecommerce-devops.git` |
-| **Working tree** | **Clean** — tất cả committed và pushed (latest: `8ca2e69`) |
+| **Working tree** | **Clean** — tất cả committed (latest HEAD: `c43607d`) |
 | **AWS runtime** | **DOWN** — `terraform destroy` hoàn tất 2026-06-10; cần bootstrap lại trước khi demo |
 | **Spec / Plan** | `docs/superpowers/specs/2026-06-01-mini-ecommerce-devops-platform-spec.md`, `docs/superpowers/plans/2026-06-01-mini-ecommerce-devops-platform.md` |
 
@@ -72,7 +72,7 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 
 **Yêu cầu phía repo gitops:** manifests `base/` phải reference image bằng tên ECR đầy đủ để `images:` transformer trong `overlays/aws/kustomization.yaml` match.
 
-### 4b. Gap-fill (2026-06-18) — **chưa commit**
+### 4b. Gap-fill (2026-06-18) — **đã commit `8ca2e69`**
 
 | File | Thay đổi |
 |------|----------|
@@ -84,6 +84,8 @@ Xây **nền tảng DevOps portfolio** quanh [Google microservices-demo](https:/
 | `.github/workflows/ci-build-push.yml` | Thêm job `test-dotnet` — chạy xUnit tests cartservice (net10.0, in-memory, không cần Redis); `build-push` depend thêm `test-dotnet` |
 | `docs/runbooks/incident-response.md` | **Runbook mới**: IR-1 ALB 5xx, IR-2 Pod CrashLoop/Pending, IR-3 Argo OutOfSync — Detect/Diagnose/Fix/Verify |
 | `docs/superpowers/handoff/current-state.md` | File này |
+
+> **Note:** 3 commit sau gap-fill (`8ca2e69`) là 2 CVE patch (`023b979` — thay `exporter-otlp-grpc` deprecated; `c43607d` — patch CRITICAL CVE trong trivy-fs scan) + 1 job verify-oidc (`69232be` — skip `build-push` graceful khi stack down). HEAD hiện tại = `c43607d`.
 
 ---
 

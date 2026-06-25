@@ -41,6 +41,30 @@ from diagrams.k8s.compute import Pod
 from diagrams.k8s.network import Ing, Service
 from diagrams.k8s.ecosystem import Helm
 from diagrams.generic.blank import Blank
+import diagrams
+
+# ── Node height fix ──────────────────────────────────────────────────────
+# We pin the icon to the TOP of the box (imagepos="tc", set in node_attr) and
+# the label to the BOTTOM (labelloc="b"). The box height must HUG icon + label
+# tightly: if it is too tall, an empty band opens in the middle and horizontal
+# edges (e.g. the 3 gRPC edges leaving the frontend hub) attach along that band
+# and cross the label text. If it is too short, the label rises into the icon.
+# Tight fit for an aspect-preserved icon (~1.45 in) + N label lines at 27pt
+# (~0.46 in/line incl. leading) + small top/bottom pad:
+#     height = 1.55 + 0.5·(label lines)
+# 1 line→2.05, 2→2.55, 3→3.05 in. No empty middle, no icon/label overlap.
+_orig_node_init = diagrams.Node.__init__
+
+
+def _node_init_taller(self, label="", *, nodeid=None, **attrs):
+    if getattr(self, "_icon", None) and "height" not in attrs:
+        lines = label.count("\n") + 1
+        attrs["height"] = str(round(1.55 + 0.5 * lines, 2))
+    _orig_node_init(self, label, nodeid=nodeid, **attrs)
+
+
+diagrams.Node.__init__ = _node_init_taller
+# ─────────────────────────────────────────────────────────────────────────
 
 C_RUNTIME = "#1F6FEB"   # blue   — runtime request path
 C_MESH    = "#6F42C1"   # purple — internal gRPC service mesh
@@ -70,9 +94,38 @@ graph_attr = {
     "nodesep": "1.8", "ranksep": "2.6",
     "compound": "true", "newrank": "true", "concentrate": "false",
 }
-node_attr = {"fontsize": "18", "fontname": "Helvetica-Bold", "margin": "0.45"}
-edge_attr = {"fontsize": "15", "fontname": "Helvetica-Bold",
-             "penwidth": "2.4", "arrowsize": "1.0"}
+# Label placement: keep the label BELOW the icon (labelloc="b") WITHOUT imagepos.
+# Why not imagepos="tc"? It makes the node's layout box equal to the *label* box
+# (the icon then floats above it), so every incoming edge attaches to the label —
+# arrowheads land on the text (e.g. "git push" → "mini-ecommerce-devops"). Instead
+# we leave the icon inside the box and give each node enough HEIGHT (see the
+# monkeypatch below) so the aspect-preserved icon sits up top and the multi-line
+# label clears it underneath. Edges then attach at box-center = on the icon.
+node_attr = {"fontsize": "27", "fontname": "Helvetica-Bold", "margin": "0.3",
+             "labelloc": "b", "imagepos": "tc"}
+edge_attr = {"fontsize": "22", "fontname": "Helvetica-Bold",
+             "penwidth": "2.8", "arrowsize": "1.1"}
+
+# Logical diagram uses a TIGHTER spacing profile so the whole picture fits the
+# screen without zooming repeatedly. We keep every node / edge / label — only
+# the gaps shrink. SVG output is added so detail stays crisp at any zoom level.
+logical_graph_attr = dict(graph_attr)
+logical_graph_attr.update({
+    "fontsize": "30",      # title — larger so it reads at fit-to-screen
+    "dpi": "150",          # crispness only; SVG carries vector detail
+    "pad": "1.2",
+    # SPACIOUS layout: the previous version forced the whole drawing into a fixed
+    # "34,20!" canvas with ratio="fill", which STRETCHED nodes into the box and
+    # crammed the 7-pod boutique column against the right edge while bending the
+    # cross-cutting edges (pull image / OIDC / secrets) into long crossing lines.
+    # We now let Graphviz size the canvas naturally (no size/ratio lock) and give
+    # it generous gaps so the ortho router has room to separate every edge.
+    "nodesep": "1.1",      # vertical gap between same-rank nodes (roomy stacks)
+    "ranksep": "2.6 equally",  # horizontal gap between ranks; "equally" keeps ranks aligned
+    # concentrate OFF: with ortho splines it merged the pink CI/CD edges and made
+    # arrowheads land on node labels.
+    "concentrate": "false",
+})
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -80,8 +133,8 @@ edge_attr = {"fontsize": "15", "fontname": "Helvetica-Bold",
 # ════════════════════════════════════════════════════════════════════════
 with Diagram(
     "Mini E-commerce DevOps Platform — Logical Architecture (AWS ap-southeast-1)",
-    filename="docs/architecture-diagram", outformat="png",
-    graph_attr=graph_attr, node_attr=node_attr, edge_attr=edge_attr,
+    filename="docs/architecture-diagram", outformat=["png", "svg"],
+    graph_attr=logical_graph_attr, node_attr=node_attr, edge_attr=edge_attr,
     direction="LR", show=False,
 ):
     # ── ACTORS ───────────────────────────────────────────────
@@ -90,14 +143,22 @@ with Diagram(
 
     # ── GITHUB ───────────────────────────────────────────────
     with Cluster("GitHub",
-                 graph_attr={"bgcolor": "#F6F8FA", "fontsize": "20",
+                 graph_attr={"bgcolor": "#F6F8FA", "fontsize": "24",
                              "fontname": "Helvetica-Bold", "style": "rounded",
                              "color": "#24292F", "penwidth": "2.0"}):
-        app_repo    = Github("mini-ecommerce-devops")
-        gitops_repo = Github("mini-ecommerce-gitops")
+        # These repo labels are wider than the icon AND receive a horizontal edge
+        # from the left. Give them a FIXED box that's wider+taller than normal with
+        # imagescale="false": the icon keeps its native size at the top, the label
+        # sits clear below it (no sinking into the icon), and the arrowhead lands in
+        # the left margin instead of on the text. (fixedsize="false" was wrong — it
+        # let imagescale grow the icon down over the label.)
+        _repo_box = {"fixedsize": "true", "width": "4.4", "height": "3.0",
+                     "imagescale": "false"}
+        app_repo    = Github("mini-ecommerce-devops", **_repo_box)
+        gitops_repo = Github("mini-ecommerce-gitops", **_repo_box)
         with Cluster("GitHub Actions",
                      graph_attr={"bgcolor": "#FFFFFF", "style": "dashed",
-                                 "fontsize": "17", "color": "#555555"}):
+                                 "fontsize": "20", "color": "#555555"}):
             ci_build = GithubActions("ci-build-push")
             ci_plan  = GithubActions("terraform-plan")
 
@@ -105,7 +166,7 @@ with Diagram(
 
     # ── AWS CLOUD ────────────────────────────────────────────
     with Cluster("AWS Cloud  •  ap-southeast-1",
-                 graph_attr={"bgcolor": "#FFF8F0", "fontsize": "22",
+                 graph_attr={"bgcolor": "#FFF8F0", "fontsize": "26",
                              "fontname": "Helvetica-Bold", "style": "rounded",
                              "color": "#FF9900", "penwidth": "2.5", "labeljust": "l"}):
 
@@ -115,14 +176,14 @@ with Diagram(
         oidc_role = IAMRole("IAM via GitHub OIDC\nECR-push (main)\nTF-plan (PR, read-only)")
 
         with Cluster("VPC  10.0.0.0/16   •   2 AZ   •   single NAT (see network diagram)",
-                     graph_attr={"bgcolor": "#EEF4FF", "fontsize": "19",
+                     graph_attr={"bgcolor": "#EEF4FF", "fontsize": "22",
                                  "fontname": "Helvetica-Bold",
                                  "color": "#1F6FEB", "penwidth": "2.0", "labeljust": "l"}):
 
             alb = ALB("Application\nLoad Balancer\n(public, 2 AZ)")
 
             with Cluster("AWS Managed Services  (private subnets / regional)",
-                         graph_attr={"bgcolor": "#F5F0FF", "fontsize": "16",
+                         graph_attr={"bgcolor": "#F5F0FF", "fontsize": "19",
                                      "style": "dashed", "color": "#8B5CF6",
                                      "penwidth": "1.5"}):
                 sm  = SecretsManager("Secrets Manager\n(RDS credentials)")
@@ -130,12 +191,12 @@ with Diagram(
                 rds = RDS("RDS PostgreSQL 16\ndb.t4g.micro • single-AZ\nplatform DB (not used by app)")
 
             with Cluster("EKS  mini-ecommerce-devops  •  v1.30   •   node group: 1× m7i-flex.large (ON_DEMAND)",
-                         graph_attr={"bgcolor": "#E8F5E9", "fontsize": "18",
+                         graph_attr={"bgcolor": "#E8F5E9", "fontsize": "21",
                                      "fontname": "Helvetica-Bold",
                                      "color": "#34A853", "penwidth": "2.0", "labeljust": "l"}):
 
                 with Cluster("Platform add-ons  (kube-system / operators)",
-                             graph_attr={"bgcolor": "#EFF7EF", "fontsize": "15",
+                             graph_attr={"bgcolor": "#EFF7EF", "fontsize": "18",
                                          "style": "dashed", "color": "#34A853",
                                          "penwidth": "1.3"}):
                     argocd = Argocd("Argo CD")
@@ -143,7 +204,7 @@ with Diagram(
                     eso    = Helm("External Secrets\nOperator (IRSA)")
 
                 with Cluster("namespace: boutique",
-                             graph_attr={"bgcolor": "#FFFFFF", "fontsize": "17",
+                             graph_attr={"bgcolor": "#FFFFFF", "fontsize": "20",
                                          "color": "#666666", "penwidth": "1.5"}):
                     ingress   = Ing("Ingress\n(AWS LBC)")
                     fe_svc    = Service("Service\nfrontend:80")
@@ -154,12 +215,12 @@ with Diagram(
                     redis_pod = Redis("Redis\n:6379\n(cart store)")
 
                 with Cluster("namespace: observability",
-                             graph_attr={"bgcolor": "#FFF8E1", "fontsize": "17",
+                             graph_attr={"bgcolor": "#FFF8E1", "fontsize": "20",
                                          "color": "#F1620E", "penwidth": "1.5"}):
                     prometheus = Prometheus("Prometheus")
                     grafana    = Grafana("Grafana")
                     with Cluster("planned  (not deployed)",
-                                 graph_attr={"bgcolor": "#F0F0F0", "fontsize": "14",
+                                 graph_attr={"bgcolor": "#F0F0F0", "fontsize": "17",
                                              "style": "dashed", "color": "#888888",
                                              "penwidth": "1.2"}):
                         otel = Pod("OTel Collector\n(traces)")
@@ -188,12 +249,14 @@ with Diagram(
                         label=step_ci(6, "apply manifests")) >> frontend
 
     # ── IMAGE PULL (kubelet on node group) ──────────────────
-    ecr >> Edge(color=C_STATE, style="dashed",
+    ecr >> Edge(color=C_STATE, style="dashed", constraint="false",
                 lhead="cluster_namespace: boutique", label="pull image") >> frontend
 
     # ── OIDC (GitHub Actions assume IAM roles — no static keys) ──
-    ci_build >> Edge(color=C_STATE, style="dotted", label="assume ECR-push role (OIDC)") >> oidc_role
-    ci_plan  >> Edge(color=C_STATE, style="dotted", label="assume TF-plan role (OIDC)") >> oidc_role
+    ci_build >> Edge(color=C_STATE, style="dotted", constraint="false",
+                     label="assume ECR-push role (OIDC)") >> oidc_role
+    ci_plan  >> Edge(color=C_STATE, style="dotted", constraint="false",
+                     label="assume TF-plan role (OIDC)") >> oidc_role
 
     # ── TERRAFORM PLAN (CI) + APPLY (local) ─────────────────
     app_repo >> Edge(color=C_STATE, style="dashed", label="on PR infra/**") >> ci_plan
@@ -202,24 +265,32 @@ with Diagram(
                      label="terraform apply (local)") >> tf_state
 
     # ── SECRETS  (ESO reads Secrets Manager → K8s Secret) ───
-    sm  >> Edge(color=C_SECRET, penwidth="2.2", label="GetSecretValue") >> eso
-    eso >> Edge(color=C_SECRET, style="dashed",
+    # constraint="false": these are side-branches — they must NOT pull the
+    # managed-services cluster into the runtime rank (that is what crowded the
+    # centre of the canvas). Keeping them unconstrained lets the runtime path
+    # stay a clean horizontal line.
+    sm  >> Edge(color=C_SECRET, penwidth="2.2", constraint="false",
+                label="GetSecretValue") >> eso
+    eso >> Edge(color=C_SECRET, style="dashed", constraint="false",
                 lhead="cluster_namespace: boutique",
                 label="write K8s Secret") >> frontend
 
     # ── LBC provisions the ALB from the Ingress object ──────
-    lbc >> Edge(color=C_RUNTIME, style="dashed", label="provisions ALB\nfrom Ingress") >> alb
+    lbc >> Edge(color=C_RUNTIME, style="dashed", constraint="false",
+                label="provisions ALB\nfrom Ingress") >> alb
 
     # ── OBSERVABILITY  (labels = DATA emitted) ──────────────
-    frontend   >> Edge(color=C_OBSERV, style="dotted",
+    frontend   >> Edge(color=C_OBSERV, style="dotted", constraint="false",
                        ltail="cluster_namespace: boutique", label="/metrics") >> prometheus
-    frontend   >> Edge(color=C_STATE, style="dotted",
+    frontend   >> Edge(color=C_STATE, style="dotted", constraint="false",
                        ltail="cluster_namespace: boutique",
                        label="OTLP traces\n(planned — code wired,\nENABLE_TRACING=0 today)") >> otel
     otel       >> Edge(color=C_STATE, style="dotted", label="export (planned)") >> grafana
     prometheus >> Edge(color=C_OBSERV, label="datasource") >> grafana
-    rds        >> Edge(color=C_OBSERV, style="dashed", label="CPU / storage") >> cw
-    alb        >> Edge(color=C_OBSERV, style="dashed", label="5xx errors") >> cw
+    rds        >> Edge(color=C_OBSERV, style="dashed", constraint="false",
+                       label="CPU / storage") >> cw
+    alb        >> Edge(color=C_OBSERV, style="dashed", constraint="false",
+                       label="5xx errors") >> cw
 
 
 # ════════════════════════════════════════════════════════════════════════
