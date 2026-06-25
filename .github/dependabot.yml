@@ -47,12 +47,18 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies", "terraform"]
+    ignore:
+      - dependency-name: "hashicorp/aws"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "terraform"
     directory: "/infra/bootstrap/state"
     schedule:
       interval: "weekly"
     labels: ["dependencies", "terraform"]
+    ignore:
+      - dependency-name: "hashicorp/aws"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "gomod"
     directory: "/src/frontend"

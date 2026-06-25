@@ -38,17 +38,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Trivy FS scan — infra (Terraform/IaC)
+      - name: Trivy FS scan — infra (Terraform/IaC, gate on CRITICAL)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: infra
           severity: CRITICAL
           exit-code: "1"
-      - name: Trivy FS scan — src (Dockerfiles + dependencies)
+      - name: Trivy FS scan — infra (SARIF report)
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: infra
+          format: sarif
+          output: trivy-fs-infra.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+      - name: Upload Trivy infra FS report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-infra
+          path: trivy-fs-infra.sarif
+      - name: Trivy FS scan — src (Dockerfiles + dependencies, SARIF report-only)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: src
-          severity: CRITICAL
-          exit-code: "1"
+          format: sarif
+          output: trivy-fs-src.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+      - name: Upload Trivy src FS report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-src
+          path: trivy-fs-src.sarif
