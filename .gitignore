@@ -11,9 +11,14 @@ plan-output.txt
 !backend.hcl.example
 backend.hcl
 !*.tfvars.example
+
+# IDE/editor
 .idea/
 .vscode/
+
+# Node.js
 node_modules/
+
 .agents/
 __pycache__/
 .DS_Store
@@ -21,3 +26,8 @@ __pycache__/
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+
+# Microsoft Office temporary lock files
+~$*.docx
+~$*.pptx
+~$*.xlsx
