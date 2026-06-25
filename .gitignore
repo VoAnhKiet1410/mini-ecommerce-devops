@@ -13,6 +13,7 @@ backend.hcl
 !*.tfvars.example
 .idea/
 .vscode/
+node_modules/
 .agents/
 __pycache__/
 .DS_Store
