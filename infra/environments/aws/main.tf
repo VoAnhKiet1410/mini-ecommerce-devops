@@ -79,3 +79,5 @@ module "observability_cloudwatch" {
   eks_cluster_name = module.eks.cluster_name
   tags             = local.tags
 }
+
+# infracost verify trigger
