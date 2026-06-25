@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload Trivy report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-${{ matrix.service.name }}
           path: trivy-${{ matrix.service.name }}.sarif
