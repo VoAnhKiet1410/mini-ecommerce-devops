@@ -261,7 +261,7 @@ jobs:
 
       - name: Open PR on gitops repo
         if: steps.probe.outputs.available == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
           path: gitops
