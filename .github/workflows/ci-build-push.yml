@@ -34,7 +34,7 @@ jobs:
           - name: checkoutservice
             path: src/checkoutservice
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: ${{ matrix.service.path }}/go.mod
@@ -46,7 +46,7 @@ jobs:
   test-dotnet:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
@@ -118,7 +118,7 @@ jobs:
           - name: checkoutservice
             context: src/checkoutservice
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -233,7 +233,7 @@ jobs:
 
       - name: Checkout gitops repo
         if: steps.probe.outputs.available == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.repository_owner }}/mini-ecommerce-gitops
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
