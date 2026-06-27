@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: infra/environments/aws
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -132,7 +132,7 @@ jobs:
 
       - name: Checkout base branch
         if: steps.probe.outputs.available == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
@@ -144,7 +144,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.probe.outputs.available == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Infracost diff
         if: steps.probe.outputs.available == 'true'
