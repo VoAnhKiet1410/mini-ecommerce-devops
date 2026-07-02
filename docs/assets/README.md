@@ -2,6 +2,7 @@
 
 | File | Source |
 |------|--------|
+| `readme-architecture-diagram.png` | Image used by the root README architecture sections |
 | `aws-platform-architecture.png` | Rendered from `docs/draw_architecture.py`, matching `aws-platform-architecture.drawio` |
 | `aws-platform-architecture.svg` | SVG render of the README architecture diagram |
 | `aws-platform-architecture.drawio` | Editable draw.io source for the README architecture diagram |
