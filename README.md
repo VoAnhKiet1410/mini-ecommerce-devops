@@ -42,6 +42,8 @@ The AWS environment is intentionally **ephemeral**: bring it up for a demo, veri
 
 ![AWS platform architecture](docs/assets/aws-platform-architecture.png)
 
+Source diagram: [`docs/assets/aws-platform-architecture.drawio`](docs/assets/aws-platform-architecture.drawio)
+
 ```text
 Developer / GitHub
   |-- Source code, Terraform, workflows, runbooks
@@ -205,6 +207,8 @@ Môi trường AWS được thiết kế theo hướng **ephemeral**: bật lên
 ### Kiến Trúc
 
 ![Sơ đồ kiến trúc AWS](docs/assets/aws-platform-architecture.png)
+
+Source diagram: [`docs/assets/aws-platform-architecture.drawio`](docs/assets/aws-platform-architecture.drawio)
 
 ```text
 Developer / GitHub
