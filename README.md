@@ -40,7 +40,7 @@ The AWS environment is intentionally **ephemeral**: bring it up for a demo, veri
 
 ### Architecture
 
-![AWS platform architecture](docs/assets/readme-architecture-diagram.png)
+![AWS platform architecture](docs/assets/readme-architecture-diagram-v2.png)
 
 Source diagram: [`docs/assets/aws-platform-architecture.drawio`](docs/assets/aws-platform-architecture.drawio)
 
@@ -206,7 +206,7 @@ Môi trường AWS được thiết kế theo hướng **ephemeral**: bật lên
 
 ### Kiến Trúc
 
-![Sơ đồ kiến trúc AWS](docs/assets/readme-architecture-diagram.png)
+![Sơ đồ kiến trúc AWS](docs/assets/readme-architecture-diagram-v2.png)
 
 Source diagram: [`docs/assets/aws-platform-architecture.drawio`](docs/assets/aws-platform-architecture.drawio)
 
