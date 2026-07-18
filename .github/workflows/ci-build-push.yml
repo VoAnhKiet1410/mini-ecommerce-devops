@@ -35,7 +35,7 @@ jobs:
             path: src/checkoutservice
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: ${{ matrix.service.path }}/go.mod
           cache-dependency-path: ${{ matrix.service.path }}/go.sum
