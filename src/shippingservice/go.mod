@@ -6,7 +6,7 @@ toolchain go1.26.1
 
 require (
 	cloud.google.com/go/profiler v0.4.3
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.1
 	golang.org/x/net v0.52.0
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
